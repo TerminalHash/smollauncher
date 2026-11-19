@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=SmolLauncher
+Comment=Lightweight application management tool
+Exec=/usr/bin/smollauncher
+Icon=/usr/share/pixmaps/smollauncher.png
+Type=Application

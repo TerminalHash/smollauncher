@@ -1,0 +1,43 @@
+# Maintainer: Dmitry Lyashuk <lyashuk.voxx at gmail dot com>
+pkgname=smollauncher-git
+pkgver=1.0
+pkgrel=1
+pkgdesc="Simple and not overloaded application manager."
+arch=(x86_64 i686)
+url="https://terminalhash.deadsoftware.ru/"
+license=('GPL3')
+depends=(tomlplusplus qt6-base qt6-svg qt6-tools)
+makedepends=(git gcc)
+provides=(smollauncher)
+source=(
+  'git+https://github.com/TerminalHash/smollauncher'
+  'smollauncher.desktop'
+  'smollauncher.png'
+)
+sha256sums=(
+  'SKIP'
+  'd17fea637dc381d67176196a9b9053b4ea8927fa6362c6a3e447202c3345c18e'
+  'bf90be4cd7b67223af89b8f7e14a0a92707402e6e814068580ec47f009829f0e'
+)
+
+pkgver() {
+  cd "$srcdir"/smollauncher
+  printf "$_pkgver_base.r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+build() {
+  cd "${srcdir}/smollauncher/"
+  mkdir build && cd build
+  
+  # building process
+  qmake6 ../SmolLauncher.pro
+  make
+}
+
+
+package() {
+  cd "${srcdir}"
+  install -Dm755 smollauncher/build/smollauncher "${pkgdir}"/usr/bin/smollauncher
+  install -Dm644 smollauncher.desktop "${pkgdir}"/usr/share/applications/smollauncher.desktop
+  install -Dm644 smollauncher.png "${pkgdir}"/usr/share/pixmaps/smollauncher.png
+}

@@ -1,0 +1,19 @@
+# qmake / build output
+Makefile
+Makefile.*
+*.o
+moc_*
+qrc_*
+ui_*
+.qmake.stash
+
+# Generated binaries and test runner
+SmolLauncher
+tests/smollauncher_tests
+
+# Generated translations
+*.qm
+
+# Build directories
+build/
+build-*/

@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="/icons">
+    <file>graphic/sl_icon.svg</file>
+    <file>graphic/ebakot.png</file>
+  </qresource>
+</RCC>
