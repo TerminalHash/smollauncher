@@ -26,3 +26,6 @@
 2. Почему нет поддержки обнаружения Steam, Heroic и прочих магазинов/лаунчеров из Flatpak/Snap?
 
 Не пользуюсь ни Flatpak, ни Snap и не считаю нужным заводить ради них отдельные проверки.
+
+## Preview
+![screenshot](repo_resources/screen_ru.png)

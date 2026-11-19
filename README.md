@@ -1,4 +1,4 @@
-# SmolLauncher
+# ![icon](repo_resources/sl_icon.png) SmolLauncher
 Simple and not overloaded application manager without any extra dependencies.
 
 Features:
@@ -26,3 +26,6 @@ In short, i need a very simple application manager, which won’t offer more tha
 2. Why that launcher don't have support for search Steam, Heroic, etc. from Flatpak/Snap?
 
 I'm not using Flatpak and Snap and don't see the point to make checks for them.
+
+## Preview
+![screenshot](repo_resources/screen_en.png)

@@ -1,6 +1,7 @@
 # Maintainer: Dmitry Lyashuk <lyashuk.voxx at gmail dot com>
 pkgname=smollauncher-git
 pkgver=1.0
+_pkgver_base=1.0
 pkgrel=1
 pkgdesc="Simple and not overloaded application manager."
 arch=(x86_64 i686)
@@ -25,9 +26,22 @@ pkgver() {
   printf "$_pkgver_base.r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
 }
 
+prepare(){
+  cd "${srcdir}/smollauncher/"
+
+  BUILD_DIR="$PWD/build"
+  if [ -d "$BUILD_DIR" ]; then
+    rm -r build
+  else
+    echo "Here we go"
+  fi;
+
+  mkdir build
+}
+
 build() {
   cd "${srcdir}/smollauncher/"
-  mkdir build && cd build
+  cd build
   
   # building process
   qmake6 ../SmolLauncher.pro
