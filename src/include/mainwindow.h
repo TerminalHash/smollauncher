@@ -107,6 +107,7 @@ private:
     static bool isScriptFile(const QString &path);
 
     QStandardItem *categoryForInsert() const;
+    QStandardItem *selectedCategory() const;
 
     void switchLanguage(const QString &code);
     QTranslator *m_appTranslator = nullptr;

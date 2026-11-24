@@ -19,8 +19,17 @@ void CategoryPane::paintEvent(QPaintEvent *)
 {
     QStyleOptionTabWidgetFrame opt;
     opt.initFrom(this);
-    if (m_paletteSource)
-        opt.palette = m_paletteSource->palette();
+    if (m_paletteSource) {
+        QPalette pal = m_paletteSource->palette();
+        // The source may be hidden or disabled, so its palette can carry a
+        // stale current color group (e.g. Disabled while this pane is shown).
+        // These panes are display-only: use the window's active/inactive
+        // state, never the Disabled group, to match a real tab widget.
+        pal.setCurrentColorGroup((opt.state & QStyle::State_Active)
+                                     ? QPalette::Active
+                                     : QPalette::Inactive);
+        opt.palette = pal;
+    }
     opt.rect = rect();
     opt.tabBarRect = QRect();
     opt.selectedTabRect = QRect();

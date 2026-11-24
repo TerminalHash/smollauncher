@@ -287,6 +287,20 @@ void MainWindow::setupConnections()
         AboutDialog dlg(this);
         dlg.exec();
     });
+    connect(ui->actionSortApps, &QAction::triggered, this, [this]{
+        if (auto *cat = selectedCategory())
+            sortCategoryApps(cat);
+    });
+    connect(ui->menuSort, &QMenu::aboutToShow, this, [this]{
+        auto *cat = selectedCategory();
+        int appCount = 0;
+        if (cat) {
+            for (int i = 0; i < cat->rowCount(); ++i)
+                if (cat->child(i)->data(TypeRole).toInt() == TypeApp)
+                    ++appCount;
+        }
+        ui->actionSortApps->setEnabled(appCount >= 2);
+    });
 
     // ---- keyboard shortcuts for menu actions -------------------------------
     ui->actionNewList->setShortcut(QKeySequence::New);             // Ctrl+N
@@ -460,6 +474,16 @@ QStandardItem *MainWindow::categoryForInsert() const
     return nullptr;
 }
 
+QStandardItem *MainWindow::selectedCategory() const
+{
+    const QModelIndex proxyCur = ui->AppList->currentIndex();
+    if (!proxyCur.isValid()) return nullptr;
+
+    auto *it = m_model->itemFromIndex(fromProxy(proxyCur));
+    if (!it) return nullptr;
+    return it->data(TypeRole).toInt() == TypeCategory ? it : it->parent();
+}
+
 void MainWindow::onAddCategory()
 {
     auto *cat = createCategoryItem(tr("New category"));
@@ -477,7 +501,14 @@ void MainWindow::onAddApplication()
         m_model->appendRow(parent);
     }
     auto *app = createAppItem(tr("New application"));
-    parent->appendRow(app);
+    int insertRow = parent->rowCount();
+    const QModelIndex proxyCur = ui->AppList->currentIndex();
+    if (proxyCur.isValid()) {
+        auto *it = m_model->itemFromIndex(fromProxy(proxyCur));
+        if (it && it->parent() == parent)
+            insertRow = it->row() + 1;
+    }
+    parent->insertRow(insertRow, app);
     ui->AppList->expand(toProxy(parent->index()));                // ← toProxy
     ui->AppList->setCurrentIndex(toProxy(app->index()));
 }
