@@ -803,6 +803,7 @@
      <string>Sort</string>
     </property>
     <addaction name="actionSortApps"/>
+    <addaction name="actionSortAllCategories"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuSort"/>
@@ -894,6 +895,11 @@
   <action name="actionSortApps">
    <property name="text">
     <string>Sort applications alphabetically</string>
+   </property>
+  </action>
+  <action name="actionSortAllCategories">
+   <property name="text">
+    <string>Sort all categories alphabetically</string>
    </property>
   </action>
   <action name="actionTerminalEmulator">

@@ -58,6 +58,7 @@ private slots:
     void onLaunchApp();
     void onTreeContextMenu(const QPoint &pos);
     void onFilterChanged(const QString &text);
+    void undoLastAction();
 
     // importers
     void onImportFromSteam();
@@ -82,6 +83,7 @@ private:
     bool    m_dirty = false;
     int     m_dirtySuppress = 0;   // >0 while applying internal updates
     bool    m_loadingConfig = false;   // expand/collapse during load is not autosaved
+    bool    m_applyingFilter = false;  // expand/collapse during filtering is not persisted
 
     void loadConfigFile(const QString &path);   // extracted from onFileOpen
     void setDirty(bool dirty = true);
@@ -120,6 +122,7 @@ private:
     void applyIconSize(int px);
 
     void applyFixedWindowSize(bool fixed);
+    void saveFreeWindowSize();
     void updateCatVisibility();
     void updateCatWidth();
 
@@ -141,7 +144,25 @@ private:
     QLineEdit           *m_filterField = nullptr;
     
     void sortCategoryApps(QStandardItem *cat);
+    int  sortCategoryAppsCore(QStandardItem *cat);
+    void sortAllCategories();
     void refreshSelectionStatus();
+
+    // One-level-style in-memory undo for destructive tree edits.
+    enum class UndoKind { Removed, Sorted };
+    struct UndoEntry
+    {
+        UndoKind kind = UndoKind::Sorted;
+        QStandardItem *parent = nullptr;   // Removed: original parent (null = top level)
+        int row = 0;                       // Removed: original row
+        QStandardItem *item = nullptr;     // Removed: owned while on the undo stack
+        QList<QPair<QStandardItem *, QList<QStandardItem *>>> orders; // Sorted
+        QString description;
+    };
+    void pushUndo(const UndoEntry &entry);
+    void clearUndoStack();
+    QList<UndoEntry> m_undoStack;
+    static constexpr int kMaxUndo = 20;
 
     QString m_selectionCommand;      // empty when no app is selected
 

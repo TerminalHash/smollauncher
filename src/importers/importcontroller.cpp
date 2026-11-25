@@ -83,7 +83,7 @@ void ImportController::fromSteam()
         m_w->m_model->appendRow(parent);
     }
 
-    const SteamImporter::LaunchCommand launcher =
+    const LaunchCommand launcher =
         SteamImporter::launchCommand();
 
     for (const SteamGame &g : picked) {
@@ -348,6 +348,11 @@ void ImportController::fromItch()
     for (const ItchGame &g : picked) {
         auto *app = m_w->createAppItem(g.title);
 
+#if defined(Q_OS_WIN)
+        // Native Windows build: run the .exe directly.
+        app->binaryPath = g.executable;
+        app->arguments  = g.arguments;
+#else
         if (g.windowsOnly) {
             // Mirror itch/Heroic: run the Windows build through Wine, with
             // the .exe path relative to the game directory (the working dir).
@@ -360,6 +365,7 @@ void ImportController::fromItch()
             app->binaryPath = g.executable;
             app->arguments  = g.arguments;
         }
+#endif
 
         app->workDir            = g.installPath;   // matches itch's own cwd
         app->launchInTerminal   = false;
@@ -420,10 +426,11 @@ void ImportController::fromRetroArch()
         m_w->m_model->appendRow(parent);
     }
 
+    const LaunchCommand launcher = RetroArchImporter::launchCommand();
     for (const RetroArchGame &g : picked) {
         auto *app = m_w->createAppItem(g.romTitle);
-        app->binaryPath         = QStringLiteral("retroarch");
-        app->arguments          = QStringList();
+        app->binaryPath         = launcher.program;
+        app->arguments          = launcher.prefix;
         // Only pass -L for a core that actually exists; otherwise let
         // RetroArch auto-detect (the scan flags that case as a warning).
         if (!g.corePath.isEmpty() && QFileInfo::exists(g.corePath))
@@ -446,6 +453,13 @@ void ImportController::fromRetroArch()
 
 void ImportController::fromPrism()
 {
+    if (!PrismImporter::isAvailable()) {
+        QMessageBox::warning(m_w, MainWindow::tr("Import from Prism Launcher"),
+            MainWindow::tr("Prism Launcher was not found on this system.\n"
+               "Imported entries would not be able to launch."));
+        return;
+    }
+
     const QList<PrismInstance> instances = PrismImporter::scan();
     if (instances.isEmpty()) {
         QMessageBox::information(
@@ -479,10 +493,12 @@ void ImportController::fromPrism()
         m_w->m_model->appendRow(parent);
     }
 
+    const LaunchCommand launcher = PrismImporter::launchCommand();
     for (const PrismInstance &inst : picked) {
         auto *app = m_w->createAppItem(inst.displayName());
-        app->binaryPath         = QStringLiteral("prismlauncher");
-        app->arguments          = { QStringLiteral("--launch"), inst.uuid };
+        app->binaryPath         = launcher.program;
+        app->arguments          = launcher.prefix;
+        app->arguments         << QStringLiteral("--launch") << inst.uuid;
         app->workDir            = inst.instancePath;
         app->launchInTerminal   = false;
         app->launchWithDebugger = false;

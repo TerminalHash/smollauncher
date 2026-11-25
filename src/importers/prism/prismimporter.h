@@ -4,6 +4,8 @@
 #include <QString>
 #include <QList>
 
+#include "../../include/launchcommand.h"
+
 struct PrismInstance
 {
     QString name;          // from instance.cfg
@@ -30,6 +32,9 @@ namespace PrismImporter {
 QString configFile();          // prismlauncher.cfg
 QString instanceDirectory();   // InstanceDir, or the default next to the config
 QList<PrismInstance> scan();
+
+bool isAvailable();
+LaunchCommand launchCommand();
 
 } // namespace PrismImporter
 

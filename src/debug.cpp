@@ -6,6 +6,7 @@
 #include <QDateTime>
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 
 #include <cstdio>
 
@@ -30,15 +31,33 @@ QString logFilePath()
     return path;
 }
 
+void rotateLogIfNeeded(const QString &path)
+{
+    // Rotate once per process at the first write, keeping one previous file.
+    static bool checked = false;
+    if (checked) return;
+    checked = true;
+
+    if (QFileInfo(path).size() < 1024 * 1024)
+        return;
+
+    const QString old = path + QStringLiteral(".1");
+    QFile::remove(old);
+    QFile::rename(path, old);
+}
+
 void writeLine(const QString &message)
 {
+    const QString path = logFilePath();
+    rotateLogIfNeeded(path);
+
     const QString line = QDateTime::currentDateTime().toString(Qt::ISODateWithMs)
         + QStringLiteral(" [%1] ").arg(QCoreApplication::applicationPid())
         + message;
 
     std::fprintf(stderr, "%s\n", qUtf8Printable(line));
 
-    QFile f(logFilePath());
+    QFile f(path);
     if (f.open(QIODevice::WriteOnly | QIODevice::Append | QIODevice::Text))
         f.write(line.toUtf8() + '\n');
 }

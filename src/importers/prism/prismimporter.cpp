@@ -11,6 +11,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QSet>
+#include <QStandardPaths>
 
 #include <algorithm>
 
@@ -94,6 +95,56 @@ QString PrismImporter::configFile()
     const QString base = PlatformPaths::configHome();
 #endif
     return base + QStringLiteral("/PrismLauncher/prismlauncher.cfg");
+}
+
+bool PrismImporter::isAvailable()
+{
+#if defined(Q_OS_MACOS)
+    if (!QStandardPaths::findExecutable(QStringLiteral("prismlauncher")).isEmpty())
+        return true;
+    return QFileInfo::exists(QStringLiteral("/Applications/Prism Launcher.app"))
+        || QFileInfo::exists(QDir::homePath()
+                             + QStringLiteral("/Applications/Prism Launcher.app"));
+#elif defined(Q_OS_WIN)
+    const LaunchCommand cmd = PrismImporter::launchCommand();
+    if (QFileInfo(cmd.program).isAbsolute())
+        return QFileInfo(cmd.program).isExecutable();
+    return !QStandardPaths::findExecutable(QStringLiteral("prismlauncher")).isEmpty();
+#else
+    return !QStandardPaths::findExecutable(QStringLiteral("prismlauncher")).isEmpty();
+#endif
+}
+
+LaunchCommand PrismImporter::launchCommand()
+{
+#if defined(Q_OS_MACOS)
+    const QString cli = QStandardPaths::findExecutable(QStringLiteral("prismlauncher"));
+    if (!cli.isEmpty())
+        return { cli, {} };
+    return { QStringLiteral("/usr/bin/open"),
+             { QStringLiteral("-a"), QStringLiteral("Prism Launcher"),
+               QStringLiteral("--args") } };
+#elif defined(Q_OS_WIN)
+    const QString cli = QStandardPaths::findExecutable(QStringLiteral("prismlauncher"));
+    if (!cli.isEmpty())
+        return { cli, {} };
+
+    const QStringList candidates = {
+        qEnvironmentVariable("LOCALAPPDATA")
+            + QStringLiteral("/Programs/PrismLauncher/prismlauncher.exe"),
+        qEnvironmentVariable("ProgramFiles")
+            + QStringLiteral("/PrismLauncher/prismlauncher.exe"),
+        qEnvironmentVariable("ProgramFiles(x86)")
+            + QStringLiteral("/PrismLauncher/prismlauncher.exe"),
+    };
+    for (const QString &path : candidates) {
+        if (!path.startsWith(QLatin1Char('/')) && QFileInfo::exists(path))
+            return { path, {} };
+    }
+    return { QStringLiteral("prismlauncher"), {} };
+#else
+    return { QStringLiteral("prismlauncher"), {} };
+#endif
 }
 
 QString PrismImporter::instanceDirectory()

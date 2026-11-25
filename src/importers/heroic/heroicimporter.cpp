@@ -273,7 +273,53 @@ bool isLegendaryAvailable()
 
 bool isHeroicAvailable()
 {
+#if defined(Q_OS_MACOS)
+    if (!QStandardPaths::findExecutable(QStringLiteral("heroic")).isEmpty())
+        return true;
+    return QFileInfo::exists(QStringLiteral("/Applications/Heroic.app"))
+        || QFileInfo::exists(QDir::homePath()
+                             + QStringLiteral("/Applications/Heroic.app"))
+        || QFileInfo(heroicConfigDir()).isDir();
+#elif defined(Q_OS_WIN)
+    if (!QStandardPaths::findExecutable(QStringLiteral("heroic")).isEmpty())
+        return true;
+
+    const QStringList candidates = {
+        qEnvironmentVariable("LOCALAPPDATA")
+            + QStringLiteral("/Programs/Heroic/Heroic.exe"),
+        qEnvironmentVariable("ProgramFiles")
+            + QStringLiteral("/Heroic/Heroic.exe"),
+        qEnvironmentVariable("ProgramFiles(x86)")
+            + QStringLiteral("/Heroic/Heroic.exe"),
+        qEnvironmentVariable("ProgramFiles")
+            + QStringLiteral("/Heroic Games Launcher/Heroic.exe"),
+    };
+    for (const QString &path : candidates) {
+        if (!path.startsWith(QLatin1Char('/')) && QFileInfo::exists(path))
+            return true;
+    }
+    return QFileInfo(heroicConfigDir()).isDir();
+#else
     return !QStandardPaths::findExecutable(QStringLiteral("heroic")).isEmpty();
+#endif
+}
+
+LaunchCommand launchCommand()
+{
+#if defined(Q_OS_MACOS)
+    const QString cli = QStandardPaths::findExecutable(QStringLiteral("heroic"));
+    if (!cli.isEmpty())
+        return { cli, {} };
+    return { QStringLiteral("/usr/bin/open"), {} };
+#elif defined(Q_OS_WIN)
+    const QString cli = QStandardPaths::findExecutable(QStringLiteral("heroic"));
+    if (!cli.isEmpty())
+        return { cli, {} };
+    return { QStringLiteral("rundll32.exe"),
+             { QStringLiteral("url.dll,FileProtocolHandler") } };
+#else
+    return { QStringLiteral("heroic"), {} };
+#endif
 }
 
 QList<HeroicGame> scanEpic()
@@ -286,6 +332,14 @@ QList<HeroicGame> scanEpic()
         !QStandardPaths::findExecutable(QStringLiteral("umu-run")).isEmpty();
 
     for (auto &g : games) {
+#if defined(Q_OS_WIN)
+        // On Windows the installed game is a native executable.
+        if (!g.executablePath.isEmpty() && QFileInfo(g.executablePath).isFile()) {
+            g.launchBinary = g.executablePath;
+            g.launchArgs.clear();
+            continue;
+        }
+#endif
         const WineSetup setup = parseGameConfig(g.appName);
 
         // ── Proton → umu-run ───────────────────────────────────────────
@@ -309,10 +363,12 @@ QList<HeroicGame> scanEpic()
         }
 
         // ── Fallback → Heroic URI ──────────────────────────────────────
-        g.launchBinary = QStringLiteral("heroic");
-        g.launchArgs   = { QStringLiteral(
+        const LaunchCommand launcher = launchCommand();
+        g.launchBinary = launcher.program;
+        g.launchArgs   = launcher.prefix;
+        g.launchArgs  << QStringLiteral(
             "heroic://launch?appName=%1&runner=legendary")
-            .arg(QString::fromLatin1(QUrl::toPercentEncoding(g.appName))) };
+            .arg(QString::fromLatin1(QUrl::toPercentEncoding(g.appName)));
         g.warning      = QCoreApplication::translate(
             "HeroicImporter", "Uses Heroic launcher (Proton config not found)");
     }
@@ -336,6 +392,7 @@ QList<HeroicGame> scanGog()
         if (g.executablePath.isEmpty())
             g.executablePath = findGogExecutable(g.installPath, g.appName);
 
+#if !defined(Q_OS_WIN)
         // ── 1. Native Linux — prefer the game's own start.sh ─────────────
         const QString startScript = g.installPath + "/start.sh";
         const QFileInfo scriptInfo(startScript);
@@ -348,6 +405,16 @@ QList<HeroicGame> scanGog()
                 g.launchArgs = { startScript };
             continue;
         }
+#endif
+
+#if defined(Q_OS_WIN)
+        // ── 1. Native Windows executable ─────────────────────────────────
+        if (!g.executablePath.isEmpty() && QFileInfo(g.executablePath).isFile()) {
+            g.launchBinary = g.executablePath;
+            g.launchArgs.clear();
+            continue;
+        }
+#endif
 
         // ── 2. Windows game — wine / umu-run via GamesConfig ─────────────
         const WineSetup setup = parseGameConfig(g.appName);
@@ -357,10 +424,12 @@ QList<HeroicGame> scanGog()
         }
 
         // ── 3. Fallback ─────────────────────────────────────────────────
-        g.launchBinary = QStringLiteral("heroic");
-        g.launchArgs   = { QStringLiteral(
+        const LaunchCommand launcher = launchCommand();
+        g.launchBinary = launcher.program;
+        g.launchArgs   = launcher.prefix;
+        g.launchArgs  << QStringLiteral(
             "heroic://launch?appName=%1&runner=gog")
-            .arg(QString::fromLatin1(QUrl::toPercentEncoding(g.appName))) };
+            .arg(QString::fromLatin1(QUrl::toPercentEncoding(g.appName)));
         g.warning = QCoreApplication::translate(
             "HeroicImporter",
             "Uses Heroic launcher (Windows executable or Wine config not found)");

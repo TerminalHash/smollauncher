@@ -55,6 +55,7 @@ HEADERS += $$PWD/include/mainwindow.h \
            $$PWD/launchcontroller.h \
            $$PWD/include/iconpickerdialog.h \
            $$PWD/include/launcherfilterproxy.h \
+           $$PWD/include/launchcommand.h \
            $$PWD/importers/steam/steamimporter.h \
            $$PWD/importers/steam/steampickerdialog.h \
            $$PWD/importers/heroic/heroicimporter.h \

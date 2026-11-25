@@ -59,6 +59,9 @@ struct ReadResult
     QList<Category> categories;
 };
 
+// Path of the single backup kept beside a config file.
+QString backupPath(const QString &path);
+
 // Parse a TOML config file. Returns ReadError::None on success.
 ReadResult read(const QString &path);
 

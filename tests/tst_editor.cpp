@@ -8,6 +8,7 @@
 #include "include/terminalsettingsdialog.h"
 
 #include <QApplication>
+#include <QAction>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QFile>
@@ -51,6 +52,10 @@ private slots:
 
     void languageChangeKeepsEditorPaths();
     void removingEnvVarUpdatesEntry();
+    void removingAppCanBeUndone();
+    void sortAllCategoriesCanBeUndone();
+    void filterKeepsCollapseState();
+    void freeWindowSizeIsRemembered();
     void terminalPrefixesAreCorrect();
     void terminalSettingsRoundTrip();
     void terminalDialogReflectsSettings();
@@ -154,6 +159,150 @@ void EditorTest::removingEnvVarUpdatesEntry()
     QCOMPARE(env->rowCount(), 1);
     QVERIFY(!app->env.contains(QStringLiteral("A")));
     QVERIFY(app->env.contains(QStringLiteral("B")));
+}
+
+void EditorTest::removingAppCanBeUndone()
+{
+    MainWindow window;
+    window.show();
+    QCoreApplication::processEvents();
+    AppItem *app = selectFirstApp(window);
+    QVERIFY(app);
+
+    QStandardItem *category = app->parent();
+    QVERIFY(category);
+    const int before = category->rowCount();
+
+    QVERIFY(QMetaObject::invokeMethod(&window, "onRemoveFromList",
+                                      Qt::DirectConnection));
+    QCOMPARE(category->rowCount(), before - 1);
+    QVERIFY(!app->parent());
+
+    QVERIFY(QMetaObject::invokeMethod(&window, "undoLastAction",
+                                      Qt::DirectConnection));
+    QCOMPARE(category->rowCount(), before);
+    QCOMPARE(app->parent(), category);
+
+    // Same via the tree shortcut, which is how users reach it.
+    const int beforeShortcut = category->rowCount();
+    QVERIFY(QMetaObject::invokeMethod(&window, "onRemoveFromList",
+                                      Qt::DirectConnection));
+    auto *tree = window.findChild<QTreeView *>(QStringLiteral("AppList"));
+    QVERIFY(tree);
+    tree->setFocus();
+    QTest::keyClick(tree, Qt::Key_Z, Qt::ControlModifier);
+    QCoreApplication::processEvents();
+    QCOMPARE(category->rowCount(), beforeShortcut);
+}
+
+void EditorTest::sortAllCategoriesCanBeUndone()
+{
+    const QString path = m_dir.path() + QStringLiteral("/sort.toml");
+    QFile list(path);
+    QVERIFY(list.open(QIODevice::WriteOnly));
+    list.write(R"([[categories]]
+name = 'Cat A'
+
+[[categories.items]]
+name = 'Zeta'
+binary = '/bin/true'
+
+[[categories.items]]
+name = 'Alpha'
+binary = '/bin/true'
+
+[[categories]]
+name = 'Cat B'
+
+[[categories.items]]
+name = 'Gamma'
+binary = '/bin/true'
+
+[[categories.items]]
+name = 'Beta'
+binary = '/bin/true'
+)");
+    list.close();
+
+    QSettings settings(m_dir.path() + QStringLiteral("/SmolLauncher.conf"),
+                       QSettings::IniFormat);
+    settings.setValue(QStringLiteral("lastConfigPath"), path);
+    settings.sync();
+
+    MainWindow window;
+    auto *tree = window.findChild<QTreeView *>(QStringLiteral("AppList"));
+    QVERIFY(tree);
+    auto *proxy = qobject_cast<LauncherFilterProxy *>(tree->model());
+    QVERIFY(proxy);
+    auto *source = qobject_cast<QStandardItemModel *>(proxy->sourceModel());
+    QVERIFY(source);
+    QCOMPARE(source->rowCount(), 2);
+
+    auto *action = window.findChild<QAction *>(
+        QStringLiteral("actionSortAllCategories"));
+    QVERIFY(action);
+    action->trigger();
+
+    QCOMPARE(source->item(0)->child(0)->text(), QStringLiteral("Alpha"));
+    QCOMPARE(source->item(0)->child(1)->text(), QStringLiteral("Zeta"));
+    QCOMPARE(source->item(1)->child(0)->text(), QStringLiteral("Beta"));
+    QCOMPARE(source->item(1)->child(1)->text(), QStringLiteral("Gamma"));
+
+    QVERIFY(QMetaObject::invokeMethod(&window, "undoLastAction",
+                                      Qt::DirectConnection));
+    QCOMPARE(source->item(0)->child(0)->text(), QStringLiteral("Zeta"));
+    QCOMPARE(source->item(0)->child(1)->text(), QStringLiteral("Alpha"));
+    QCOMPARE(source->item(1)->child(0)->text(), QStringLiteral("Gamma"));
+    QCOMPARE(source->item(1)->child(1)->text(), QStringLiteral("Beta"));
+}
+
+void EditorTest::filterKeepsCollapseState()
+{
+    MainWindow window;
+    window.show();
+    QCoreApplication::processEvents();
+
+    auto *tree = window.findChild<QTreeView *>(QStringLiteral("AppList"));
+    auto *filter = window.findChild<QLineEdit *>(QStringLiteral("searchField"));
+    QVERIFY(tree);
+    QVERIFY(filter);
+
+    const QModelIndex category = tree->model()->index(0, 0);
+    QVERIFY(category.isValid());
+    tree->collapse(category);
+    QCoreApplication::processEvents();
+    QVERIFY(!tree->isExpanded(category));
+
+    filter->setText(QStringLiteral("Game"));
+    QCoreApplication::processEvents();
+    QVERIFY(tree->isExpanded(category));
+
+    filter->clear();
+    QCoreApplication::processEvents();
+    QVERIFY(!tree->isExpanded(category));
+}
+
+void EditorTest::freeWindowSizeIsRemembered()
+{
+    QSettings settings(m_dir.path() + QStringLiteral("/SmolLauncher.conf"),
+                       QSettings::IniFormat);
+    settings.setValue(QStringLiteral("fixedWindowSize"), false);
+    settings.setValue(QStringLiteral("freeWindowWidth"), 1000);
+    settings.setValue(QStringLiteral("freeWindowHeight"), 700);
+    settings.sync();
+
+    MainWindow window;
+    QCOMPARE(window.size(), QSize(1000, 700));
+
+    auto *fixed = window.findChild<QAction *>(
+        QStringLiteral("actionFixedWindowSize"));
+    QVERIFY(fixed);
+
+    fixed->setChecked(true);
+    QCOMPARE(window.size(), QSize(900, 600));
+
+    fixed->setChecked(false);
+    QCOMPARE(window.size(), QSize(1000, 700));
 }
 
 void EditorTest::terminalPrefixesAreCorrect()

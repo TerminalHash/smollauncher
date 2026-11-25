@@ -129,10 +129,48 @@ void LaunchController::launch(AppItem *app)
         program = term;
         args    = termPrefix;
 #elif defined(Q_OS_WIN)
-        QStringList full = QStringList() << program << args;
-        args = QStringList() << "/c" << "start" << "cmd" << "/k"
-                             << full.join(' ');
-        program = "cmd.exe";
+        // cmd's argument quoting is fragile when joined into one string. Use a
+        // temporary batch file and let `start` open it in a new console.
+        QString dir = app->workDir;
+        if (dir.isEmpty())
+            dir = QFileInfo(app->binaryPath).absolutePath();
+
+        QString commandLine = CommandLine::windowsJoinArgs(
+            QStringList{ program } + args);
+        commandLine.replace(QLatin1Char('%'), QStringLiteral("%%"));
+
+        QString script = QStringLiteral("@echo off\r\n");
+        if (!dir.isEmpty()) {
+            QString batchDir = CommandLine::windowsQuote(dir);
+            batchDir.replace(QLatin1Char('%'), QStringLiteral("%%"));
+            script += QStringLiteral("cd /d %1\r\n").arg(batchDir);
+        }
+        script += commandLine + QStringLiteral("\r\n");
+
+        QTemporaryFile file(
+            QStandardPaths::writableLocation(QStandardPaths::TempLocation)
+            + QStringLiteral("/smollauncher-XXXXXX.bat"));
+        file.setAutoRemove(false);
+        if (!file.open()) {
+            QMessageBox::warning(m_w, MainWindow::tr("SmolLauncher"),
+                                 MainWindow::tr("Could not create a terminal script."));
+            return;
+        }
+        const QByteArray batchData = script.toLocal8Bit();
+        if (file.write(batchData) != batchData.size() || !file.flush()) {
+            QMessageBox::warning(m_w, MainWindow::tr("SmolLauncher"),
+                                 MainWindow::tr("Could not write a terminal script."));
+            return;
+        }
+        file.close();
+
+        program = QStringLiteral("cmd.exe");
+        args = QStringList{
+            QStringLiteral("/c"),
+            QStringLiteral("start"),
+            QString(),
+            file.fileName()
+        };
 #elif defined(Q_OS_MACOS)
         // Terminal.app has no "-e": write a temporary .command script and let
         // LaunchServices open it in Terminal. Unlike AppleScript, this needs

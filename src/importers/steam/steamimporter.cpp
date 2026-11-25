@@ -285,7 +285,7 @@ bool SteamImporter::isSteamAvailable()
         || QFileInfo::exists(QDir::homePath()
                              + QStringLiteral("/Applications/Steam.app"));
 #elif defined(Q_OS_WIN)
-    const LaunchCommand cmd = launchCommand();
+    const LaunchCommand cmd = SteamImporter::launchCommand();
     if (QFileInfo(cmd.program).isAbsolute())
         return QFileInfo(cmd.program).isExecutable();
     return !QStandardPaths::findExecutable(cmd.program).isEmpty();
@@ -294,7 +294,7 @@ bool SteamImporter::isSteamAvailable()
 #endif
 }
 
-SteamImporter::LaunchCommand SteamImporter::launchCommand()
+LaunchCommand SteamImporter::launchCommand()
 {
 #if defined(Q_OS_MACOS)
     const QString cli = QStandardPaths::findExecutable(QStringLiteral("steam"));

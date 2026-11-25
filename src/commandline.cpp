@@ -37,9 +37,59 @@ QString shellQuote(const QString &s)
     return out;
 }
 
-QStringList splitArgs(const QString &line)
+QString windowsQuote(const QString &s)
 {
-    QStringList out;
+    if (s.isEmpty())
+        return QStringLiteral("\"\"");
+
+    bool needsQuote = false;
+    for (QChar c : s) {
+        if (c.isSpace() || c == '"' || c == '&' || c == '|'
+            || c == '<' || c == '>' || c == '^'
+            || c == '(' || c == ')') {
+            needsQuote = true;
+            break;
+        }
+    }
+    if (!needsQuote)
+        return s;
+
+    // Windows command-line quoting: backslashes are literal unless they
+    // precede a quote, where they must be doubled, plus one for the quote.
+    QString out;
+    out.reserve(s.size() + 4);
+    out += QLatin1Char('"');
+    int backslashes = 0;
+    for (QChar c : s) {
+        if (c == '\\') {
+            ++backslashes;
+            continue;
+        }
+        if (c == '"') {
+            out += QString(backslashes * 2 + 1, QLatin1Char('\\'));
+            out += c;
+        } else {
+            out += QString(backslashes, QLatin1Char('\\'));
+            out += c;
+        }
+        backslashes = 0;
+    }
+    out += QString(backslashes * 2, QLatin1Char('\\'));
+    out += QLatin1Char('"');
+    return out;
+}
+
+QString windowsJoinArgs(const QStringList &args)
+{
+    QStringList quoted;
+    quoted.reserve(args.size());
+    for (const QString &a : args)
+        quoted << windowsQuote(a);
+    return quoted.join(QLatin1Char(' '));
+}
+
+QStringList splitArgs(const QString &line)
+{    QStringList out;
     QString cur;
     QChar quote;
     bool started = false;

@@ -5,6 +5,7 @@
 #include "include/launchermodel.h"
 
 #include <QFile>
+#include <QFileInfo>
 #include <QStandardItemModel>
 #include <QTemporaryDir>
 
@@ -34,6 +35,7 @@ class ConfigFileTest : public QObject
 private slots:
     void writesAndReadsRoundTrip();
     void writesEmptyCategoryList();
+    void keepsPreviousVersionAsBackup();
     void roundTripsControlCharacters();
     void rejectsMissingCategories();
     void rejectsUnknownKeys();
@@ -125,6 +127,44 @@ void ConfigFileTest::writesEmptyCategoryList()
     const ConfigFile::ReadResult result = ConfigFile::read(path);
     QCOMPARE(result.error, ConfigFile::ReadError::None);
     QCOMPARE(result.categories.size(), 0);
+}
+
+void ConfigFileTest::keepsPreviousVersionAsBackup()
+{
+    QTemporaryDir dir;
+    const QString path = dir.path() + QStringLiteral("/list.toml");
+    const QString backup = ConfigFile::backupPath(path);
+
+    QStandardItemModel oldModel;
+    auto *oldCat = new QStandardItem(QStringLiteral("Old"));
+    oldCat->setData(TypeCategory, TypeRole);
+    oldModel.appendRow(oldCat);
+
+    QStandardItemModel newModel;
+    auto *newCat = new QStandardItem(QStringLiteral("New"));
+    newCat->setData(TypeCategory, TypeRole);
+    newModel.appendRow(newCat);
+
+    QString error;
+    QVERIFY2(ConfigFile::write(oldModel, path, &error), qPrintable(error));
+    QVERIFY2(ConfigFile::write(newModel, path, &error), qPrintable(error));
+    QVERIFY(QFileInfo::exists(backup));
+
+    const ConfigFile::ReadResult fromBackup = ConfigFile::read(backup);
+    QCOMPARE(fromBackup.error, ConfigFile::ReadError::None);
+    QCOMPARE(fromBackup.categories.size(), 1);
+    QCOMPARE(fromBackup.categories.first().name, QStringLiteral("Old"));
+
+    // A corrupt current file must not replace the good backup.
+    QFile broken(path);
+    QVERIFY(broken.open(QIODevice::WriteOnly | QIODevice::Truncate));
+    broken.write("[[categories\n");
+    broken.close();
+    QVERIFY2(ConfigFile::write(newModel, path, &error), qPrintable(error));
+
+    const ConfigFile::ReadResult stillOld = ConfigFile::read(backup);
+    QCOMPARE(stillOld.error, ConfigFile::ReadError::None);
+    QCOMPARE(stillOld.categories.first().name, QStringLiteral("Old"));
 }
 
 void ConfigFileTest::roundTripsControlCharacters()

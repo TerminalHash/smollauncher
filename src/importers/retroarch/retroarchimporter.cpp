@@ -59,7 +59,54 @@ QString RetroArchImporter::playlistsDirectory()
 
 bool RetroArchImporter::isAvailable()
 {
+#if defined(Q_OS_MACOS)
+    if (!QStandardPaths::findExecutable(QStringLiteral("retroarch")).isEmpty())
+        return true;
+    return QFileInfo::exists(QStringLiteral("/Applications/RetroArch.app"))
+        || QFileInfo::exists(QDir::homePath()
+                             + QStringLiteral("/Applications/RetroArch.app"));
+#elif defined(Q_OS_WIN)
+    const LaunchCommand cmd = RetroArchImporter::launchCommand();
+    if (QFileInfo(cmd.program).isAbsolute())
+        return QFileInfo(cmd.program).isExecutable();
     return !QStandardPaths::findExecutable(QStringLiteral("retroarch")).isEmpty();
+#else
+    return !QStandardPaths::findExecutable(QStringLiteral("retroarch")).isEmpty();
+#endif
+}
+
+LaunchCommand RetroArchImporter::launchCommand()
+{
+#if defined(Q_OS_MACOS)
+    const QString cli = QStandardPaths::findExecutable(QStringLiteral("retroarch"));
+    if (!cli.isEmpty())
+        return { cli, {} };
+    return { QStringLiteral("/usr/bin/open"),
+             { QStringLiteral("-a"), QStringLiteral("RetroArch"),
+               QStringLiteral("--args") } };
+#elif defined(Q_OS_WIN)
+    const QString cli = QStandardPaths::findExecutable(QStringLiteral("retroarch"));
+    if (!cli.isEmpty())
+        return { cli, {} };
+
+    const QStringList candidates = {
+        qEnvironmentVariable("ProgramFiles")
+            + QStringLiteral("/RetroArch/retroarch.exe"),
+        qEnvironmentVariable("ProgramFiles(x86)")
+            + QStringLiteral("/RetroArch/retroarch.exe"),
+        qEnvironmentVariable("LOCALAPPDATA")
+            + QStringLiteral("/RetroArch/retroarch.exe"),
+        qEnvironmentVariable("APPDATA")
+            + QStringLiteral("/RetroArch/retroarch.exe"),
+    };
+    for (const QString &path : candidates) {
+        if (!path.startsWith(QLatin1Char('/')) && QFileInfo::exists(path))
+            return { path, {} };
+    }
+    return { QStringLiteral("retroarch"), {} };
+#else
+    return { QStringLiteral("retroarch"), {} };
+#endif
 }
 
 QList<RetroArchGame> RetroArchImporter::scan()

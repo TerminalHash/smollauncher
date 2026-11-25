@@ -5,6 +5,8 @@
 #include <QStringList>
 #include <QList>
 
+#include "../../include/launchcommand.h"
+
 struct SteamGame
 {
     QString appId;
@@ -14,13 +16,6 @@ struct SteamGame
 };
 
 namespace SteamImporter {
-
-// How to launch a steam:// URL on this platform.
-struct LaunchCommand
-{
-    QString program;
-    QStringList prefix;    // arguments before the URL
-};
 
 // Returns true if Steam can be launched on this system.
 bool isSteamAvailable();

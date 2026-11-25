@@ -12,6 +12,7 @@ private slots:
     void keepsEmptyQuotedArgument();
     void keepsUnclosedQuoteText();
     void quotesShellMetacharacters();
+    void windowsQuotesArguments();
     void joinArgsRoundTrips();
     void leavesSlashPathsAlone();
 };
@@ -63,6 +64,25 @@ void CommandLineTest::quotesShellMetacharacters()
              QStringLiteral("'a;b'"));
     QCOMPARE(CommandLine::shellQuote(QStringLiteral("a'b")),
              QStringLiteral("'a'\\''b'"));
+}
+
+void CommandLineTest::windowsQuotesArguments()
+{
+    QCOMPARE(CommandLine::windowsQuote(QString()), QStringLiteral("\"\""));
+    QCOMPARE(CommandLine::windowsQuote(QStringLiteral("plain")),
+             QStringLiteral("plain"));
+    QCOMPARE(CommandLine::windowsQuote(QStringLiteral("a b")),
+             QStringLiteral("\"a b\""));
+    QCOMPARE(CommandLine::windowsQuote(QStringLiteral("a&b")),
+             QStringLiteral("\"a&b\""));
+    QCOMPARE(CommandLine::windowsQuote(QStringLiteral("a\"b")),
+             QStringLiteral("\"a\\\"b\""));
+    QCOMPARE(CommandLine::windowsQuote(QStringLiteral("a b\\")),
+             QStringLiteral("\"a b\\\\\""));
+
+    QCOMPARE(CommandLine::windowsJoinArgs(
+                 { QStringLiteral("game.exe"), QStringLiteral("a b") }),
+             QStringLiteral("game.exe \"a b\""));
 }
 
 void CommandLineTest::joinArgsRoundTrips()

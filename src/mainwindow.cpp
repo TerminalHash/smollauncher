@@ -33,6 +33,7 @@
 #include <QUrl>
 #include <QSignalBlocker>
 #include <QSettings>
+#include <QSet>
 #include <QCloseEvent>
 #include <QTimer>
 #include <QStyle>
@@ -148,9 +149,12 @@ MainWindow::MainWindow(QWidget *parent)
     setupImportSubmenu();
     applyIconSize(launcherSettings().value("iconSize", 24).toInt());
 
-    ui->actionFixedWindowSize->setChecked(
-        launcherSettings().value("fixedWindowSize", true).toBool());
-    applyFixedWindowSize(ui->actionFixedWindowSize->isChecked());
+    {
+        QSignalBlocker block(ui->actionFixedWindowSize);
+        ui->actionFixedWindowSize->setChecked(
+            launcherSettings().value("fixedWindowSize", true).toBool());
+        applyFixedWindowSize(ui->actionFixedWindowSize->isChecked());
+    }
 
     switchLanguage(language);
 
@@ -160,6 +164,8 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
+    clearUndoStack();
+
     // Detach processes
     // Their finished-handlers use QPointer<MainWindow> and self-delete.
     for (QProcess *p : std::as_const(m_running)) {
@@ -279,6 +285,8 @@ void MainWindow::setupConnections()
     connect(ui->actionAddFromMenu,  &QAction::triggered, this, &MainWindow::onAddFromDesktop);
     connect(ui->actionExit,         &QAction::triggered, this, &MainWindow::close);
     connect(ui->actionFixedWindowSize, &QAction::toggled, this, [this](bool fixed){
+        if (fixed)
+            saveFreeWindowSize();
         applyFixedWindowSize(fixed);
         launcherSettings().setValue("fixedWindowSize", fixed);
     });
@@ -290,6 +298,8 @@ void MainWindow::setupConnections()
         if (auto *cat = selectedCategory())
             sortCategoryApps(cat);
     });
+    connect(ui->actionSortAllCategories, &QAction::triggered,
+            this, &MainWindow::sortAllCategories);
     connect(ui->menuSort, &QMenu::aboutToShow, this, [this]{
         auto *cat = selectedCategory();
         int appCount = 0;
@@ -299,6 +309,19 @@ void MainWindow::setupConnections()
                     ++appCount;
         }
         ui->actionSortApps->setEnabled(appCount >= 2);
+
+        bool anySortable = false;
+        for (int i = 0; i < m_model->rowCount() && !anySortable; ++i) {
+            auto *item = m_model->item(i);
+            if (item->data(TypeRole).toInt() != TypeCategory)
+                continue;
+            int count = 0;
+            for (int j = 0; j < item->rowCount(); ++j)
+                if (item->child(j)->data(TypeRole).toInt() == TypeApp)
+                    ++count;
+            anySortable = count >= 2;
+        }
+        ui->actionSortAllCategories->setEnabled(anySortable);
     });
 
 #ifdef Q_OS_LINUX
@@ -362,6 +385,12 @@ void MainWindow::setupConnections()
     delKey->setContext(Qt::WidgetWithChildrenShortcut);
     connect(delKey, &QShortcut::activated, this, &MainWindow::onRemoveFromList);
 
+    auto *undoKey = new QShortcut(QKeySequence::Undo, ui->AppList);
+    undoKey->setContext(Qt::WidgetShortcut);   // not the inline editor
+    connect(undoKey, &QShortcut::activated, this, [this]{
+        undoLastAction();
+    });
+
     auto *focusBin = new QShortcut(
             QKeySequence(QStringLiteral("Ctrl+L")), this);
     connect(focusBin, &QShortcut::activated, this, [this]{
@@ -387,6 +416,7 @@ void MainWindow::setupConnections()
 
     // ---- expanded / collapsed state → ExpandedRole ---------------------------
     connect(ui->AppList, &QTreeView::expanded, this, [this](const QModelIndex &proxyIdx){
+        if (m_applyingFilter) return;
         auto *item = m_model->itemFromIndex(fromProxy(proxyIdx));
         if (item && item->data(TypeRole).toInt() == TypeCategory) {
             ++m_dirtySuppress;      // UI state, not a user edit
@@ -396,6 +426,7 @@ void MainWindow::setupConnections()
         }
     });
     connect(ui->AppList, &QTreeView::collapsed, this, [this](const QModelIndex &proxyIdx){
+        if (m_applyingFilter) return;
         auto *item = m_model->itemFromIndex(fromProxy(proxyIdx));
         if (item && item->data(TypeRole).toInt() == TypeCategory) {
             ++m_dirtySuppress;      // UI state, not a user edit
@@ -717,11 +748,24 @@ void MainWindow::onRemoveFromList()
             next = m_model->item(row - 1);
     }
 
+    UndoEntry undo;
+    undo.kind        = UndoKind::Removed;
+    undo.parent      = parentItem;
+    undo.row         = row;
+    undo.item        = it;
+    undo.description = tr("Remove \"%1\"").arg(it->text());
+
     m_currentItem = nullptr;
     EditorController(this).clear();
 
-    if (parentItem) parentItem->removeRow(row);
-    else            m_model->removeRow(row);
+    if (parentItem) {
+        if (parentItem->takeRow(row).isEmpty())
+            return;
+    } else {
+        if (m_model->takeRow(row).isEmpty())
+            return;
+    }
+    pushUndo(undo);
 
     if (next) {
         const QModelIndex proxyNext = toProxy(next->index());
@@ -733,6 +777,9 @@ void MainWindow::onRemoveFromList()
             onTreeSelectionChanged(proxyNext, QModelIndex());
         }
     }
+
+    ui->AppList->setFocus();
+    updateStatus(tr("Removed \"%1\" (Ctrl+Z to undo)").arg(undo.item->text()));
 }
 
 void MainWindow::onLaunchApp()
@@ -902,33 +949,56 @@ void MainWindow::loadConfigFile(const QString &path)
         ~LoadingGuard() { flag = false; }
     } loadingGuard(m_loadingConfig);
 
-    const ConfigFile::ReadResult parsed = ConfigFile::read(path);
+    ConfigFile::ReadResult parsed = ConfigFile::read(path);
     Debug::log(QStringLiteral("loadConfigFile: \"%1\" error=%2")
         .arg(path)
         .arg(static_cast<int>(parsed.error)));
-    switch (parsed.error) {
-    case ConfigFile::ReadError::None:
-        break;
-    case ConfigFile::ReadError::ParseError:
-        ui->statusbar->showMessage(
-            tr("Invalid TOML (%1:%2): %3")
-                .arg(parsed.errorPath)
-                .arg(static_cast<qulonglong>(parsed.errorLine))
-                .arg(parsed.errorDescription),
-            8000);
-        return;
-    case ConfigFile::ReadError::MissingCategories:
-        ui->statusbar->showMessage(
-            tr("Config has no [[categories]]: %1").arg(path), 8000);
-        return;
-    case ConfigFile::ReadError::UnsupportedTopLevelKey:
-        ui->statusbar->showMessage(
-            tr("Unsupported key in config; not loaded: %1").arg(path), 10000);
-        return;
-    case ConfigFile::ReadError::UnsupportedStructure:
-        ui->statusbar->showMessage(
-            tr("Unsupported config structure; not loaded: %1").arg(path), 10000);
-        return;
+
+    bool recovered = false;
+    if (parsed.error != ConfigFile::ReadError::None) {
+        QString reason;
+        switch (parsed.error) {
+        case ConfigFile::ReadError::ParseError:
+            reason = tr("Invalid TOML (%1:%2): %3")
+                         .arg(parsed.errorPath)
+                         .arg(static_cast<qulonglong>(parsed.errorLine))
+                         .arg(parsed.errorDescription);
+            break;
+        case ConfigFile::ReadError::MissingCategories:
+            reason = tr("Config has no [[categories]]: %1").arg(path);
+            break;
+        case ConfigFile::ReadError::UnsupportedTopLevelKey:
+            reason = tr("Unsupported key in config; not loaded: %1").arg(path);
+            break;
+        case ConfigFile::ReadError::UnsupportedStructure:
+            reason = tr("Unsupported config structure; not loaded: %1").arg(path);
+            break;
+        case ConfigFile::ReadError::None:
+            break;
+        }
+
+        const QString backup = ConfigFile::backupPath(path);
+        if (QFileInfo::exists(backup)) {
+            const auto answer = QMessageBox::question(
+                this, tr("Config error"),
+                tr("Could not load the list:\n\n%1\n\n"
+                   "A backup exists:\n%2\n\nLoad the backup instead?")
+                    .arg(reason, backup),
+                QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+            if (answer == QMessageBox::Yes) {
+                const ConfigFile::ReadResult fromBackup =
+                    ConfigFile::read(backup);
+                if (fromBackup.error == ConfigFile::ReadError::None) {
+                    parsed = fromBackup;
+                    recovered = true;
+                }
+            }
+        }
+
+        if (!recovered) {
+            ui->statusbar->showMessage(reason, 8000);
+            return;
+        }
     }
 
     QList<QStandardItem *> staged;
@@ -986,6 +1056,8 @@ void MainWindow::loadConfigFile(const QString &path)
         collapsedFlags.append(false);
     }
 
+    clearUndoStack();
+    m_filterField->clear();   // a new list should start unfiltered
     m_currentItem = nullptr;
     m_model->clear();
     EditorController(this).clear();
@@ -1000,7 +1072,7 @@ void MainWindow::loadConfigFile(const QString &path)
     }
 
     m_configPath = path;
-    m_dirty = false;
+    m_dirty = recovered;
     launcherSettings().setValue("lastConfigPath", path);
     addToRecentLists(path);
     // Count broken entries for the status message
@@ -1015,12 +1087,15 @@ void MainWindow::loadConfigFile(const QString &path)
     }
 
     QString msg = tr("Config loaded: %1").arg(path);
+    if (recovered)
+        msg += QLatin1Char(' ') + tr("(recovered from backup; save to keep it)");
     if (broken > 0)
         msg += QLatin1Char(' ') + tr("(%n broken)", "", broken);
     ui->statusbar->showMessage(msg, 8000);
-    Debug::log(QStringLiteral("loadConfigFile done: categories=%1 broken=%2 current=%3")
+    Debug::log(QStringLiteral("loadConfigFile done: categories=%1 broken=%2 recovered=%3 current=%4")
         .arg(parsed.categories.size())
         .arg(broken)
+        .arg(recovered)
         .arg(itemDescription(m_currentItem)));
 }
 
@@ -1144,6 +1219,9 @@ void MainWindow::onSaveConfigAs()
 
 void MainWindow::closeEvent(QCloseEvent *e)
 {
+    if (!ui->actionFixedWindowSize->isChecked())
+        saveFreeWindowSize();
+
     Debug::detail(QStringLiteral("closeEvent: dirty=%1 current=%2")
         .arg(m_dirty)
         .arg(itemDescription(m_currentItem)));
@@ -1257,6 +1335,7 @@ void MainWindow::onNewList()
     EditorController(this).clear();
 
     m_filterField->clear();   // triggers onFilterChanged("") → filter + drag re-enabled
+    clearUndoStack();
     m_model->clear();
     m_configPath = path;
 
@@ -1361,8 +1440,25 @@ void MainWindow::applyFixedWindowSize(bool fixed)
         // Let the window shrink to the layout's minimum and grow freely.
         setMinimumSize(QSize(0, 0));
         setMaximumSize(QSize(QWIDGETSIZE_MAX, QWIDGETSIZE_MAX));
+
+        const QSettings settings = launcherSettings();
+        const int width = settings.value("freeWindowWidth", 0).toInt();
+        const int height = settings.value("freeWindowHeight", 0).toInt();
+        if (width > 0 && height > 0)
+            resize(width, height);
     }
     updateCatVisibility();
+}
+
+void MainWindow::saveFreeWindowSize()
+{
+    const QSize size = (isMaximized() || isFullScreen())
+        ? normalGeometry().size()
+        : QSize(width(), height());
+
+    QSettings settings = launcherSettings();
+    settings.setValue("freeWindowWidth", size.width());
+    settings.setValue("freeWindowHeight", size.height());
 }
 
 void MainWindow::updateCatWidth()
@@ -1454,8 +1550,20 @@ void MainWindow::rebuildRecentMenu()
     if (!m_recentMenu) return;
     m_recentMenu->clear();
 
-    const QStringList list =
-        launcherSettings().value("recentLists").toStringList();
+    QSettings settings = launcherSettings();
+    QStringList list = settings.value("recentLists").toStringList();
+
+    // Drop entries whose files are gone; the menu must not accumulate stale
+    // paths forever.
+    QStringList existing;
+    for (const QString &path : list) {
+        if (QFileInfo(path).isFile())
+            existing << path;
+    }
+    if (existing != list) {
+        settings.setValue("recentLists", existing);
+        list = existing;
+    }
 
     if (list.isEmpty()) {
         QAction *empty = m_recentMenu->addAction(tr("(no recent lists)"));
@@ -1472,8 +1580,6 @@ void MainWindow::rebuildRecentMenu()
         a->setData(path);
         a->setEnabled(exists);
 
-        if (!exists)
-            a->setText(fi.fileName() + QLatin1Char(' ') + tr("(missing)"));
         if (path == m_configPath) {
             a->setCheckable(true);
             a->setChecked(true);
@@ -1556,28 +1662,71 @@ QModelIndex MainWindow::fromProxy(const QModelIndex &proxyIdx) const
 
 void MainWindow::onFilterChanged(const QString &text)
 {
+    m_applyingFilter = true;
     m_proxy->setFilterText(text);
     const bool filtering = !m_proxy->filterText().isEmpty();
 
     // Dragging while filtered is confusing (the dropped item may be hidden)
     ui->AppList->setDragEnabled(!filtering);
 
-    // Auto-expand so all matches are visible; do NOT collapse on clear —
-    // let the user's collapse state survive until they manually re-collapse.
-    if (filtering)
+    // While filtering, show everything that matches. On clear, restore the
+    // user's own expand/collapse state instead of keeping expandAll().
+    if (filtering) {
         ui->AppList->expandAll();
+    } else {
+        for (int i = 0; i < m_model->rowCount(); ++i) {
+            auto *cat = m_model->item(i);
+            if (cat->data(TypeRole).toInt() != TypeCategory)
+                continue;
+            const QModelIndex proxy = toProxy(cat->index());
+            if (!proxy.isValid())
+                continue;
+            if (cat->data(ExpandedRole).toBool())
+                ui->AppList->expand(proxy);
+            else
+                ui->AppList->collapse(proxy);
+        }
+    }
+    m_applyingFilter = false;
 }
 
 void MainWindow::sortCategoryApps(QStandardItem *cat)
 {
     if (!cat || cat->data(TypeRole).toInt() != TypeCategory) return;
 
-    // Count apps — used both for the early-out and the status message
     int appCount = 0;
     for (int i = 0; i < cat->rowCount(); ++i)
         if (cat->child(i)->data(TypeRole).toInt() == TypeApp)
             ++appCount;
     if (appCount < 2) return;
+
+    UndoEntry undo;
+    undo.kind = UndoKind::Sorted;
+    undo.description = tr("Sort \"%1\"").arg(cat->text());
+    QList<QStandardItem *> order;
+    for (int i = 0; i < cat->rowCount(); ++i)
+        order << cat->child(i);
+    undo.orders.append({ cat, order });
+    pushUndo(undo);
+
+    const int sorted = sortCategoryAppsCore(cat);
+    if (sorted >= 2) {
+        ui->AppList->setFocus();
+        updateStatus(tr("Sorted %1 entries in \"%2\"")
+                         .arg(sorted).arg(cat->text()));
+    }
+}
+
+int MainWindow::sortCategoryAppsCore(QStandardItem *cat)
+{
+    if (!cat || cat->data(TypeRole).toInt() != TypeCategory) return 0;
+
+    // Count apps — used both for the early-out and the status message
+    int appCount = 0;
+    for (int i = 0; i < cat->rowCount(); ++i)
+        if (cat->child(i)->data(TypeRole).toInt() == TypeApp)
+            ++appCount;
+    if (appCount < 2) return 0;
 
     // Preserve the currently-selected app (if it's inside this category)
     QStandardItem *selected = nullptr;
@@ -1633,8 +1782,147 @@ void MainWindow::sortCategoryApps(QStandardItem *cat)
         }
     }
 
-    updateStatus(tr("Sorted %1 entries in \"%2\"")
-                 .arg(appCount).arg(cat->text()));
+    return appCount;
+}
+
+void MainWindow::sortAllCategories()
+{
+    QList<QPair<QStandardItem *, QList<QStandardItem *>>> orders;
+
+    for (int i = 0; i < m_model->rowCount(); ++i) {
+        auto *cat = m_model->item(i);
+        if (cat->data(TypeRole).toInt() != TypeCategory)
+            continue;
+
+        int appCount = 0;
+        for (int j = 0; j < cat->rowCount(); ++j)
+            if (cat->child(j)->data(TypeRole).toInt() == TypeApp)
+                ++appCount;
+        if (appCount < 2)
+            continue;
+
+        QList<QStandardItem *> order;
+        for (int j = 0; j < cat->rowCount(); ++j)
+            order << cat->child(j);
+        orders.append({ cat, order });
+    }
+
+    if (orders.isEmpty())
+        return;
+
+    UndoEntry undo;
+    undo.kind = UndoKind::Sorted;
+    undo.description = tr("Sort all categories");
+    undo.orders = orders;
+    pushUndo(undo);
+
+    int categories = 0;
+    int apps = 0;
+    for (const auto &pair : orders) {
+        const int sorted = sortCategoryAppsCore(pair.first);
+        if (sorted >= 2) {
+            ++categories;
+            apps += sorted;
+        }
+    }
+
+    if (categories > 0) {
+        ui->AppList->setFocus();
+        updateStatus(tr("Sorted %1 entries in %2 categories")
+                         .arg(apps).arg(categories));
+    }
+}
+
+void MainWindow::pushUndo(const UndoEntry &entry)
+{
+    m_undoStack.append(entry);
+    while (m_undoStack.size() > kMaxUndo) {
+        const UndoEntry old = m_undoStack.takeFirst();
+        if (old.kind == UndoKind::Removed && old.item)
+            delete old.item;
+    }
+}
+
+void MainWindow::clearUndoStack()
+{
+    for (const UndoEntry &entry : std::as_const(m_undoStack)) {
+        if (entry.kind == UndoKind::Removed && entry.item)
+            delete entry.item;
+    }
+    m_undoStack.clear();
+}
+
+void MainWindow::undoLastAction()
+{
+    if (m_undoStack.isEmpty()) {
+        updateStatus(tr("Nothing to undo"));
+        return;
+    }
+
+    const UndoEntry undo = m_undoStack.takeLast();
+
+    if (undo.kind == UndoKind::Removed) {
+        if (undo.parent && undo.parent->model() != m_model) {
+            // Should not happen with the stack order; keep the entry so the
+            // item is not lost.
+            m_undoStack.append(undo);
+            QMessageBox::warning(this, tr("Undo"),
+                                 tr("Cannot undo this removal."));
+            return;
+        }
+
+        if (undo.parent) {
+            const int row = qBound(0, undo.row, undo.parent->rowCount());
+            undo.parent->insertRow(row, undo.item);
+        } else {
+            const int row = qBound(0, undo.row, m_model->rowCount());
+            m_model->insertRow(row, undo.item);
+        }
+
+        const QModelIndex proxy = toProxy(undo.item->index());
+        if (proxy.isValid()) {
+            ui->AppList->setCurrentIndex(proxy);
+            ui->AppList->scrollTo(proxy);
+        }
+    } else {
+        for (const auto &pair : undo.orders) {
+            auto *cat = pair.first;
+            if (!cat || cat->model() != m_model)
+                continue;
+
+            QList<QStandardItem *> current;
+            while (cat->rowCount() > 0)
+                current.append(cat->takeRow(0).first());
+
+            QSet<QStandardItem *> currentSet;
+            for (QStandardItem *item : current)
+                currentSet.insert(item);
+
+            QSet<QStandardItem *> ordered;
+            for (QStandardItem *item : pair.second) {
+                if (currentSet.contains(item)) {
+                    cat->appendRow(item);
+                    ordered.insert(item);
+                }
+            }
+            // Items added after the sort (or moved here) stay at the end.
+            for (QStandardItem *item : current) {
+                if (!ordered.contains(item))
+                    cat->appendRow(item);
+            }
+        }
+
+        if (m_currentItem) {
+            const QModelIndex proxy = toProxy(m_currentItem->index());
+            if (proxy.isValid()) {
+                ui->AppList->setCurrentIndex(proxy);
+                ui->AppList->scrollTo(proxy);
+            }
+        }
+    }
+
+    setDirty();
+    updateStatus(tr("Undone: %1").arg(undo.description));
 }
 
 void MainWindow::refreshSelectionStatus()
@@ -1721,10 +2009,12 @@ void MainWindow::setupImportSubmenu()
 
     importMenu->addAction(tr("Steam…"),
         this, &MainWindow::onImportFromSteam);
+#ifndef Q_OS_WIN
     importMenu->addAction(tr("Heroic — Epic Games…"),
         this, &MainWindow::onImportFromHeroicEpic);
     importMenu->addAction(tr("Heroic — GOG…"),
         this, &MainWindow::onImportFromHeroicGog);
+#endif
     importMenu->addAction(tr("itch.io…"),
         this, &MainWindow::onImportFromItch);
     importMenu->addAction(tr("RetroArch…"),
@@ -1748,8 +2038,10 @@ void MainWindow::retranslateCodeMenus()
     // Keep this order in sync with setupImportSubmenu().
     const QStringList texts = {
         tr("Steam…"),
+#ifndef Q_OS_WIN
         tr("Heroic — Epic Games…"),
         tr("Heroic — GOG…"),
+#endif
         tr("itch.io…"),
         tr("RetroArch…"),
         tr("Prism Launcher…"),

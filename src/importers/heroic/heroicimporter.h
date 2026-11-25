@@ -6,6 +6,8 @@
 #include <QList>
 #include <QMap>
 
+#include "../../include/launchcommand.h"
+
 struct HeroicGame
 {
     QString runner;        // "legendary" or "gog"
@@ -30,6 +32,9 @@ namespace HeroicImporter {
 
 bool isLegendaryAvailable();
 bool isHeroicAvailable();
+
+// Program used for heroic:// fallback entries on this platform.
+LaunchCommand launchCommand();
 
 QList<HeroicGame> scanEpic();
 QList<HeroicGame> scanGog();

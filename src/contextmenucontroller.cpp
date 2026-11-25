@@ -25,6 +25,38 @@ void ContextMenuController::copyCommandLine(AppItem *app)
 {
     if (!app) return;
 
+    QString full;
+
+#ifdef Q_OS_WIN
+    QStringList parts;
+
+    // Working directory
+    if (!app->workDir.isEmpty()) {
+        parts << QStringLiteral("cd /d ")
+                     + CommandLine::windowsQuote(app->workDir);
+    }
+
+    // Environment variables — sorted for deterministic output
+    if (!app->env.isEmpty()) {
+        QStringList keys = app->env.keys();
+        std::sort(keys.begin(), keys.end());
+
+        QStringList assignments;
+        for (const QString &k : keys) {
+            assignments << QStringLiteral("set \"%1=%2\"")
+                               .arg(k, app->env.value(k));
+        }
+        parts << assignments.join(QStringLiteral(" && "));
+    }
+
+    // Command
+    QString cmd = CommandLine::windowsQuote(app->binaryPath);
+    if (!app->arguments.isEmpty())
+        cmd += QLatin1Char(' ') + CommandLine::windowsJoinArgs(app->arguments);
+    parts << cmd;
+
+    full = parts.join(QStringLiteral(" && "));
+#else
     QStringList parts;
 
     // 1. Working directory
@@ -49,7 +81,9 @@ void ContextMenuController::copyCommandLine(AppItem *app)
         cmd += QLatin1Char(' ') + CommandLine::joinArgs(app->arguments);
     parts << cmd;
 
-    const QString full = parts.join(' ');
+    full = parts.join(' ');
+#endif
+
     QGuiApplication::clipboard()->setText(full);
     m_w->updateStatus(MainWindow::tr("Copied command line for \"%1\"").arg(app->text()));
 }

@@ -5,6 +5,7 @@
 #include "include/launchermodel.h"
 
 #include <QFile>
+#include <QFileInfo>
 #include <QSaveFile>
 #include <QStandardItemModel>
 #include <QStringList>
@@ -86,6 +87,11 @@ QString tomlKey(const QString &k)
 } // namespace
 
 namespace ConfigFile {
+
+QString backupPath(const QString &path)
+{
+    return path + QStringLiteral(".bak");
+}
 
 namespace {
 
@@ -349,6 +355,14 @@ bool write(const QStandardItemModel &model, const QString &path, QString *error)
     // rejected as "MissingCategories" on the next load.
     if (firstCategory)
         out = QLatin1String("categories = []\n");
+
+    // Keep the previous valid file as a single .bak. Do not overwrite a good
+    // backup with a corrupt file that is being replaced.
+    if (QFileInfo::exists(path) && read(path).error == ReadError::None) {
+        const QString backup = backupPath(path);
+        QFile::remove(backup);
+        QFile::copy(path, backup);
+    }
 
     QSaveFile f(path);
     if (!f.open(QIODevice::WriteOnly)) {

@@ -5,6 +5,8 @@
 #include <QStringList>
 #include <QList>
 
+#include "../../include/launchcommand.h"
+
 struct RetroArchGame
 {
     QString playlistName;   // "Nintendo - SNES", "Arcade", …
@@ -25,6 +27,7 @@ struct RetroArchGame
 namespace RetroArchImporter {
 
 bool isAvailable();
+LaunchCommand launchCommand();
 
 QList<RetroArchGame> scan();        // scans the default playlist dir
 QString playlistsDirectory();       // resolved path, for diagnostics
