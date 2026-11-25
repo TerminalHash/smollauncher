@@ -33,6 +33,7 @@ class ConfigFileTest : public QObject
     Q_OBJECT
 private slots:
     void writesAndReadsRoundTrip();
+    void writesEmptyCategoryList();
     void roundTripsControlCharacters();
     void rejectsMissingCategories();
     void rejectsUnknownKeys();
@@ -110,6 +111,20 @@ void ConfigFileTest::writesAndReadsRoundTrip()
     QCOMPARE(readCat.items.at(1).separator, true);
     QCOMPARE(result.categories.at(1).name, QStringLiteral("Empty"));
     QCOMPARE(result.categories.at(1).collapsed, false);
+}
+
+void ConfigFileTest::writesEmptyCategoryList()
+{
+    QStandardItemModel model;
+    QTemporaryDir dir;
+    const QString path = dir.path() + QStringLiteral("/empty.toml");
+
+    QString error;
+    QVERIFY2(ConfigFile::write(model, path, &error), qPrintable(error));
+
+    const ConfigFile::ReadResult result = ConfigFile::read(path);
+    QCOMPARE(result.error, ConfigFile::ReadError::None);
+    QCOMPARE(result.categories.size(), 0);
 }
 
 void ConfigFileTest::roundTripsControlCharacters()

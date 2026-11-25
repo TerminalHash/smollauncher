@@ -278,7 +278,45 @@ QString resolveSteamIcon(const QString &steamRoot, const QString &appId)
 // ─────────────────────────────────────────────────────────────────────────
 bool SteamImporter::isSteamAvailable()
 {
+#if defined(Q_OS_MACOS)
+    if (!QStandardPaths::findExecutable(QStringLiteral("steam")).isEmpty())
+        return true;
+    return QFileInfo::exists(QStringLiteral("/Applications/Steam.app"))
+        || QFileInfo::exists(QDir::homePath()
+                             + QStringLiteral("/Applications/Steam.app"));
+#elif defined(Q_OS_WIN)
+    const LaunchCommand cmd = launchCommand();
+    if (QFileInfo(cmd.program).isAbsolute())
+        return QFileInfo(cmd.program).isExecutable();
+    return !QStandardPaths::findExecutable(cmd.program).isEmpty();
+#else
     return !QStandardPaths::findExecutable(QStringLiteral("steam")).isEmpty();
+#endif
+}
+
+SteamImporter::LaunchCommand SteamImporter::launchCommand()
+{
+#if defined(Q_OS_MACOS)
+    const QString cli = QStandardPaths::findExecutable(QStringLiteral("steam"));
+    if (!cli.isEmpty())
+        return { cli, {} };
+    // The Steam.app bundle registers the steam:// URL handler.
+    return { QStringLiteral("/usr/bin/open"),
+             { QStringLiteral("-a"), QStringLiteral("Steam") } };
+#elif defined(Q_OS_WIN)
+    const QString regPath = QSettings(
+        QStringLiteral("HKEY_CURRENT_USER\\Software\\Valve\\Steam"),
+        QSettings::NativeFormat).value(QStringLiteral("SteamPath")).toString();
+    if (!regPath.isEmpty()) {
+        const QString exe = QDir::fromNativeSeparators(regPath)
+            + QStringLiteral("/steam.exe");
+        if (QFileInfo::exists(exe))
+            return { exe, {} };
+    }
+    return { QStringLiteral("steam"), {} };
+#else
+    return { QStringLiteral("steam"), {} };
+#endif
 }
 
 QList<SteamGame> SteamImporter::scan()

@@ -7,14 +7,16 @@
 
 #include <QApplication>
 #include <QDateTime>
+#include <QFile>
 #include <QFileInfo>
 #include <QMessageBox>
 #include <QPointer>
 #include <QProcess>
 #include <QProcessEnvironment>
-#ifdef Q_OS_LINUX
 #include <QStandardPaths>
-#endif
+#include <QTemporaryFile>
+
+#include <algorithm>
 
 #ifdef Q_OS_UNIX
 #include <unistd.h>
@@ -131,6 +133,65 @@ void LaunchController::launch(AppItem *app)
         args = QStringList() << "/c" << "start" << "cmd" << "/k"
                              << full.join(' ');
         program = "cmd.exe";
+#elif defined(Q_OS_MACOS)
+        // Terminal.app has no "-e": write a temporary .command script and let
+        // LaunchServices open it in Terminal. Unlike AppleScript, this needs
+        // no Automation/Apple Events permission.
+        QString dir = app->workDir;
+        if (dir.isEmpty())
+            dir = QFileInfo(app->binaryPath).absolutePath();
+
+        QString command = QStringLiteral("exec");
+        if (!app->env.isEmpty()) {
+            command += QStringLiteral(" env");
+            QStringList keys = app->env.keys();
+            std::sort(keys.begin(), keys.end());
+            for (const QString &key : keys) {
+                command += QLatin1Char(' ')
+                         + CommandLine::shellQuote(
+                               key + QLatin1Char('=') + app->env.value(key));
+            }
+        }
+        command += QLatin1Char(' ') + CommandLine::shellQuote(program);
+        if (!args.isEmpty())
+            command += QLatin1Char(' ') + CommandLine::joinArgs(args);
+
+        QString script = QStringLiteral("#!/bin/sh\n");
+        if (!dir.isEmpty()) {
+            script += QStringLiteral("cd %1 || exit 1\n")
+                          .arg(CommandLine::shellQuote(dir));
+        }
+        script += command + QLatin1Char('\n');
+
+        QTemporaryFile file(
+            QStandardPaths::writableLocation(QStandardPaths::TempLocation)
+            + QStringLiteral("/smollauncher-XXXXXX.command"));
+        file.setAutoRemove(false);
+        if (!file.open()) {
+            QMessageBox::warning(m_w, MainWindow::tr("SmolLauncher"),
+                                 MainWindow::tr("Could not create a terminal script."));
+            return;
+        }
+        const QByteArray scriptData = script.toUtf8();
+        if (file.write(scriptData) != scriptData.size() || !file.flush()) {
+            QMessageBox::warning(m_w, MainWindow::tr("SmolLauncher"),
+                                 MainWindow::tr("Could not write a terminal script."));
+            return;
+        }
+        file.close();
+        if (!file.setPermissions(QFileDevice::ReadOwner | QFileDevice::WriteOwner
+                                 | QFileDevice::ExeOwner)) {
+            QMessageBox::warning(m_w, MainWindow::tr("SmolLauncher"),
+                                 MainWindow::tr("Could not make a terminal script executable."));
+            return;
+        }
+
+        program = QStringLiteral("/usr/bin/open");
+        args = QStringList{
+            QStringLiteral("-a"),
+            QStringLiteral("Terminal"),
+            file.fileName()
+        };
 #else
         QMessageBox::information(m_w, MainWindow::tr("SmolLauncher"),
                                  MainWindow::tr("Terminal launch is not supported here."));

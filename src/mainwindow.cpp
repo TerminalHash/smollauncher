@@ -259,8 +259,6 @@ void MainWindow::setupConnections()
             this, &MainWindow::onTreeSelectionChanged);
     connect(ui->AppList, &QTreeView::doubleClicked,
             this, &MainWindow::onTreeDoubleClicked);
-    connect(m_model, &LauncherModel::itemMoved,
-        this, &MainWindow::onItemMoved);
 
     auto markDirty = [this]{ setDirty(); };
     // Structural changes (add/remove/move/import) mark the list dirty.
@@ -686,6 +684,17 @@ void MainWindow::onRemoveFromList()
     if (!it) return;
     Debug::detail(QStringLiteral("onRemoveFromList: current=%1").arg(itemDescription(it)));
     if (it->data(TypeRole).toInt() == TypeCategory) {
+        int categories = 0;
+        for (int i = 0; i < m_model->rowCount(); ++i)
+            if (m_model->item(i)->data(TypeRole).toInt() == TypeCategory)
+                ++categories;
+        if (categories <= 1) {
+            QMessageBox::information(
+                this, tr("Remove category"),
+                tr("At least one category is required."));
+            return;
+        }
+
         const auto answer = QMessageBox::question(
             this, tr("Remove category"),
             tr("Remove category \"%1\" and everything in it?").arg(it->text()));
@@ -968,6 +977,15 @@ void MainWindow::loadConfigFile(const QString &path)
         collapsedFlags.append(!expanded);
     }
 
+    if (staged.isEmpty()) {
+        // A config may contain `categories = []`; keep the UI usable and the
+        // next save valid by giving it one empty category.
+        auto *general = createCategoryItem(tr("General"));
+        general->setData(true, ExpandedRole);
+        staged.append(general);
+        collapsedFlags.append(false);
+    }
+
     m_currentItem = nullptr;
     m_model->clear();
     EditorController(this).clear();
@@ -1181,6 +1199,7 @@ void MainWindow::changeEvent(QEvent *event)
 
         // Code-created widgets are not covered by retranslateUi().
         m_filterField->setPlaceholderText(tr("Filter…"));
+        retranslateCodeMenus();
 
         // Restore the editor from the item — it owns the real values.
         if (m_currentItem) {
@@ -1264,7 +1283,8 @@ void MainWindow::onNewList()
 
 void MainWindow::setupLanguageSubmenu()
 {
-    auto *langMenu = new QMenu(tr("Language"), this);
+    m_languageMenu = new QMenu(tr("Language"), this);
+    QMenu *langMenu = m_languageMenu;
 
     struct Lang { const char *label; const char *code; };
     const Lang langs[] = {
@@ -1696,7 +1716,8 @@ void MainWindow::onImportFromPrism()
 
 void MainWindow::setupImportSubmenu()
 {
-    auto *importMenu = new QMenu(tr("Import games"), this);
+    m_importMenu = new QMenu(tr("Import games"), this);
+    QMenu *importMenu = m_importMenu;
 
     importMenu->addAction(tr("Steam…"),
         this, &MainWindow::onImportFromSteam);
@@ -1712,4 +1733,28 @@ void MainWindow::setupImportSubmenu()
         this, &MainWindow::onImportFromPrism);
 
     ui->actionImportApps->setMenu(importMenu);
+}
+
+void MainWindow::retranslateCodeMenus()
+{
+    if (m_languageMenu)
+        m_languageMenu->setTitle(tr("Language"));
+
+    if (!m_importMenu)
+        return;
+
+    m_importMenu->setTitle(tr("Import games"));
+
+    // Keep this order in sync with setupImportSubmenu().
+    const QStringList texts = {
+        tr("Steam…"),
+        tr("Heroic — Epic Games…"),
+        tr("Heroic — GOG…"),
+        tr("itch.io…"),
+        tr("RetroArch…"),
+        tr("Prism Launcher…"),
+    };
+    const QList<QAction *> actions = m_importMenu->actions();
+    for (int i = 0; i < actions.size() && i < texts.size(); ++i)
+        actions[i]->setText(texts[i]);
 }

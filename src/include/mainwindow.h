@@ -93,6 +93,7 @@ private:
     void setupModel();
     void setupConnections();
     void setupLanguageSubmenu();
+    void retranslateCodeMenus();
 
     QStandardItem *createCategoryItem(const QString &name,
                                       const QString &iconPath = QString());
@@ -126,6 +127,8 @@ private:
     void rebuildRecentMenu();
 
     QMenu *m_recentMenu = nullptr;
+    QMenu *m_languageMenu = nullptr;
+    QMenu *m_importMenu = nullptr;
     static constexpr int kMaxRecent = 10;
 
     bool isBinaryValid(const QString &path) const;

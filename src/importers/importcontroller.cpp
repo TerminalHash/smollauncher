@@ -44,7 +44,7 @@ void ImportController::fromSteam()
     // ---- Preflight: Steam must be reachable for the entries to launch
     if (!SteamImporter::isSteamAvailable()) {
         QMessageBox::warning(m_w, MainWindow::tr("Import from Steam"),
-            MainWindow::tr("The 'steam' command was not found in PATH.\n"
+            MainWindow::tr("Steam was not found on this system.\n"
                "Imported entries would not be able to launch."));
         return;
     }
@@ -83,10 +83,14 @@ void ImportController::fromSteam()
         m_w->m_model->appendRow(parent);
     }
 
+    const SteamImporter::LaunchCommand launcher =
+        SteamImporter::launchCommand();
+
     for (const SteamGame &g : picked) {
         auto *app = m_w->createAppItem(g.name);
-        app->binaryPath         = QStringLiteral("steam");
-        app->arguments          = { QStringLiteral("steam://rungameid/%1").arg(g.appId) };
+        app->binaryPath         = launcher.program;
+        app->arguments          = launcher.prefix;
+        app->arguments         << QStringLiteral("steam://rungameid/%1").arg(g.appId);
         app->launchInTerminal   = false;
         app->launchWithDebugger = false;
         // steam is a thin client: it hands off to the daemon and exits in ~1 s.

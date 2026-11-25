@@ -345,6 +345,11 @@ bool write(const QStandardItemModel &model, const QString &path, QString *error)
         }
     }
 
+    // A list with no categories must still round-trip; an empty file would be
+    // rejected as "MissingCategories" on the next load.
+    if (firstCategory)
+        out = QLatin1String("categories = []\n");
+
     QSaveFile f(path);
     if (!f.open(QIODevice::WriteOnly)) {
         *error = f.errorString();

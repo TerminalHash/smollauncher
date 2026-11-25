@@ -129,7 +129,7 @@ void EditorController::clear()
         .arg(m_w->ui->IconField->text()));
 
     m_w->m_currentItem = nullptr;
-    applyMode(-1);                  // disables the whole tab widget
+    applyMode(-1);                  // show the empty page
 
     QSignalBlocker b1(m_w->ui->AppNameField), b2(m_w->ui->ArgField), b3(m_w->ui->IconField),
                    b4(m_w->ui->WorkDirField), b5(m_w->ui->BinField), b6(m_w->ui->isTerminalChk),
