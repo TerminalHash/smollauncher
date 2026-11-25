@@ -200,14 +200,14 @@
     <message>
         <location filename="../smollauncher_UI.ui" line="14"/>
         <location filename="../src/contextmenucontroller.cpp" line="64"/>
-        <location filename="../src/launchcontroller.cpp" line="59"/>
-        <location filename="../src/launchcontroller.cpp" line="87"/>
-        <location filename="../src/launchcontroller.cpp" line="95"/>
-        <location filename="../src/launchcontroller.cpp" line="106"/>
-        <location filename="../src/launchcontroller.cpp" line="127"/>
-        <location filename="../src/mainwindow.cpp" line="722"/>
-        <location filename="../src/mainwindow.cpp" line="1003"/>
-        <location filename="../src/mainwindow.cpp" line="1455"/>
+        <location filename="../src/launchcontroller.cpp" line="61"/>
+        <location filename="../src/launchcontroller.cpp" line="89"/>
+        <location filename="../src/launchcontroller.cpp" line="97"/>
+        <location filename="../src/launchcontroller.cpp" line="120"/>
+        <location filename="../src/launchcontroller.cpp" line="135"/>
+        <location filename="../src/mainwindow.cpp" line="732"/>
+        <location filename="../src/mainwindow.cpp" line="1013"/>
+        <location filename="../src/mainwindow.cpp" line="1465"/>
         <source>SmolLauncher</source>
         <translation>SmolLauncher</translation>
     </message>
@@ -242,7 +242,7 @@
         <translation>Аргументы командной строки</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="800"/>
+        <location filename="../src/mainwindow.cpp" line="810"/>
         <source>Open directory</source>
         <translation>Открыть директорию</translation>
     </message>
@@ -259,7 +259,7 @@
     </message>
     <message>
         <location filename="../smollauncher_UI.ui" line="262"/>
-        <location filename="../src/mainwindow.cpp" line="120"/>
+        <location filename="../src/mainwindow.cpp" line="121"/>
         <source>Single instance</source>
         <translation>Одиночный запуск</translation>
     </message>
@@ -372,70 +372,75 @@
         <translation>Разное</translation>
     </message>
     <message>
-        <location filename="../smollauncher_UI.ui" line="802"/>
+        <location filename="../smollauncher_UI.ui" line="803"/>
         <source>Sort</source>
         <translation>Сортировка</translation>
     </message>
     <message>
-        <location filename="../smollauncher_UI.ui" line="813"/>
+        <location filename="../smollauncher_UI.ui" line="814"/>
         <source>Open list</source>
         <translation>Открыть список</translation>
     </message>
     <message>
-        <location filename="../smollauncher_UI.ui" line="818"/>
+        <location filename="../smollauncher_UI.ui" line="819"/>
         <source>Exit</source>
         <translation>Выйти</translation>
     </message>
     <message>
-        <location filename="../smollauncher_UI.ui" line="823"/>
+        <location filename="../smollauncher_UI.ui" line="824"/>
         <source>About</source>
         <translation>Об приложении</translation>
     </message>
     <message>
-        <location filename="../smollauncher_UI.ui" line="828"/>
+        <location filename="../smollauncher_UI.ui" line="829"/>
         <source>Save list</source>
         <translation>Сохранить список</translation>
     </message>
     <message>
-        <location filename="../smollauncher_UI.ui" line="833"/>
-        <location filename="../src/mainwindow.cpp" line="1199"/>
-        <location filename="../src/mainwindow.cpp" line="1220"/>
+        <location filename="../smollauncher_UI.ui" line="834"/>
+        <location filename="../src/mainwindow.cpp" line="1209"/>
+        <location filename="../src/mainwindow.cpp" line="1230"/>
         <source>New list</source>
         <translation>Новый список</translation>
     </message>
     <message>
-        <location filename="../smollauncher_UI.ui" line="838"/>
+        <location filename="../smollauncher_UI.ui" line="839"/>
         <source>Add from menu...</source>
         <translation>Добавить из меню...</translation>
     </message>
     <message>
-        <location filename="../smollauncher_UI.ui" line="843"/>
-        <location filename="../src/mainwindow.cpp" line="1257"/>
+        <location filename="../smollauncher_UI.ui" line="844"/>
+        <location filename="../src/mainwindow.cpp" line="1267"/>
         <source>Language</source>
         <translation>Язык</translation>
     </message>
     <message>
-        <location filename="../smollauncher_UI.ui" line="875"/>
+        <location filename="../smollauncher_UI.ui" line="876"/>
         <source>Very Large (48px)</source>
         <translation>Очень большой (48px)</translation>
     </message>
     <message>
-        <location filename="../smollauncher_UI.ui" line="880"/>
+        <location filename="../smollauncher_UI.ui" line="881"/>
         <source>Save list as...</source>
         <translation>Сохранить список как...</translation>
     </message>
     <message>
-        <location filename="../smollauncher_UI.ui" line="885"/>
+        <location filename="../smollauncher_UI.ui" line="886"/>
         <source>Recent lists</source>
         <translation>Недавние списки</translation>
     </message>
     <message>
-        <location filename="../smollauncher_UI.ui" line="895"/>
+        <location filename="../smollauncher_UI.ui" line="896"/>
         <source>Sort applications alphabetically</source>
         <translation>Отсортировать приложения по алфавиту</translation>
     </message>
     <message>
-        <location filename="../smollauncher_UI.ui" line="906"/>
+        <location filename="../smollauncher_UI.ui" line="901"/>
+        <source>Terminal emulator...</source>
+        <translation>Эмулятор терминала...</translation>
+    </message>
+    <message>
+        <location filename="../smollauncher_UI.ui" line="912"/>
         <source>Fixed window size</source>
         <translation>Фиксированный размер окна</translation>
     </message>
@@ -450,15 +455,15 @@
         <translation>Значение</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="196"/>
-        <location filename="../src/mainwindow.cpp" line="500"/>
-        <location filename="../src/mainwindow.cpp" line="568"/>
-        <location filename="../src/mainwindow.cpp" line="1234"/>
+        <location filename="../src/mainwindow.cpp" line="197"/>
+        <location filename="../src/mainwindow.cpp" line="510"/>
+        <location filename="../src/mainwindow.cpp" line="578"/>
+        <location filename="../src/mainwindow.cpp" line="1244"/>
         <source>General</source>
         <translation>Общее</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="157"/>
+        <location filename="../src/mainwindow.cpp" line="158"/>
         <source>Ready</source>
         <translation>Готов</translation>
     </message>
@@ -468,32 +473,32 @@
         <translation>Иконка категории</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="489"/>
+        <location filename="../src/mainwindow.cpp" line="499"/>
         <source>New category</source>
         <translation>Новая категория</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="503"/>
+        <location filename="../src/mainwindow.cpp" line="513"/>
         <source>New application</source>
         <translation>Новое приложение</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="593"/>
+        <location filename="../src/mainwindow.cpp" line="603"/>
         <source>Imported: %1</source>
         <translation>Импортировано: %1</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="680"/>
+        <location filename="../src/mainwindow.cpp" line="690"/>
         <source>Remove category</source>
         <translation>Убрать категорию</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="681"/>
+        <location filename="../src/mainwindow.cpp" line="691"/>
         <source>Remove category &quot;%1&quot; and everything in it?</source>
         <translation>Убрать категорию &quot;%1&quot; и всё её содержимое?</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="723"/>
+        <location filename="../src/mainwindow.cpp" line="733"/>
         <source>Select an application in the list first.</source>
         <translation>Сначала выберите приложение из списка.</translation>
     </message>
@@ -514,17 +519,17 @@
     </message>
     <message>
         <location filename="../smollauncher_UI.ui" line="705"/>
-        <location filename="../src/mainwindow.cpp" line="1173"/>
+        <location filename="../src/mainwindow.cpp" line="1183"/>
         <source>Filter…</source>
         <translation>Фильтр...</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="534"/>
+        <location filename="../src/mainwindow.cpp" line="544"/>
         <source>Already imported</source>
         <translation>Уже импортировано</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="535"/>
+        <location filename="../src/mainwindow.cpp" line="545"/>
         <source>&quot;%1&quot; was already imported from the same menu entry.
 
 Add another copy?</source>
@@ -533,12 +538,12 @@ Add another copy?</source>
 Добавить как копию?</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="553"/>
+        <location filename="../src/mainwindow.cpp" line="563"/>
         <source>Possible duplicate</source>
         <translation>Возможный дубликат</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="554"/>
+        <location filename="../src/mainwindow.cpp" line="564"/>
         <source>An entry with the same binary and arguments already exists:
   &quot;%1&quot;  (%2)
 
@@ -549,88 +554,95 @@ Add another copy?</source>
 Добавить как копию?</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="801"/>
+        <location filename="../src/mainwindow.cpp" line="811"/>
         <source>Directory does not exist.</source>
         <translation>Директория не существует.</translation>
     </message>
     <message>
-        <location filename="../src/launchcontroller.cpp" line="60"/>
+        <location filename="../src/launchcontroller.cpp" line="62"/>
         <source>Please choose a binary first.</source>
         <translation>Сначала выберите исполняемый файл.</translation>
     </message>
     <message>
-        <location filename="../src/launchcontroller.cpp" line="73"/>
+        <location filename="../src/launchcontroller.cpp" line="75"/>
         <source>%1 is already running</source>
         <translation>%1 уже запущен</translation>
     </message>
     <message>
-        <location filename="../src/launchcontroller.cpp" line="88"/>
+        <location filename="../src/launchcontroller.cpp" line="90"/>
         <source>gdb was not found on this system.</source>
         <translation>gdb не был найден.</translation>
     </message>
     <message>
-        <location filename="../src/launchcontroller.cpp" line="96"/>
+        <location filename="../src/launchcontroller.cpp" line="98"/>
         <source>Debugger launch is only supported on Linux.</source>
         <translation>Запуск с дебаггером поддерживается только в Linux.</translation>
     </message>
     <message>
-        <location filename="../src/launchcontroller.cpp" line="107"/>
+        <location filename="../src/launchcontroller.cpp" line="122"/>
         <source>No terminal emulator found.</source>
         <translation>Эмулятор терминала не был найден.</translation>
     </message>
     <message>
-        <location filename="../src/launchcontroller.cpp" line="128"/>
+        <location filename="../src/launchcontroller.cpp" line="123"/>
+        <source>Terminal emulator not found:
+%1</source>
+        <translation>Эмулятор терминала не был найден:
+%1</translation>
+    </message>
+    <message>
+        <location filename="../src/launchcontroller.cpp" line="136"/>
         <source>Terminal launch is not supported here.</source>
         <translation>Запуск в терминале не поддерживается в этой системе.</translation>
     </message>
     <message>
-        <location filename="../src/launchcontroller.cpp" line="162"/>
+        <location filename="../src/launchcontroller.cpp" line="170"/>
         <source>Launched: %1</source>
         <translation>Запущено: %1</translation>
     </message>
     <message>
-        <location filename="../src/launchcontroller.cpp" line="172"/>
+        <location filename="../src/launchcontroller.cpp" line="180"/>
         <source>Failed to start: %1</source>
         <translation>Не удалось запустить: %1</translation>
     </message>
     <message>
-        <location filename="../src/launchcontroller.cpp" line="201"/>
+        <location filename="../src/launchcontroller.cpp" line="209"/>
         <source>%1 launched in background</source>
         <translation>%1 запущен в фоновом режиме</translation>
     </message>
     <message>
-        <location filename="../src/launchcontroller.cpp" line="204"/>
+        <location filename="../src/launchcontroller.cpp" line="212"/>
         <source>%1 exited (%2, code %3)</source>
         <translation>%1 завершён (%2, код %3)</translation>
     </message>
     <message>
-        <location filename="../src/launchcontroller.cpp" line="206"/>
+        <location filename="../src/launchcontroller.cpp" line="214"/>
         <source>crashed</source>
         <translation>краш</translation>
     </message>
     <message>
-        <location filename="../src/launchcontroller.cpp" line="206"/>
+        <location filename="../src/launchcontroller.cpp" line="214"/>
         <source>normal</source>
         <translation>ок</translation>
     </message>
     <message>
-        <location filename="../src/launchcontroller.cpp" line="221"/>
+        <location filename="../src/launchcontroller.cpp" line="229"/>
         <source>Launching %1...</source>
         <translation>Запускаю %1...</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="861"/>
+        <location filename="../src/mainwindow.cpp" line="871"/>
         <source>Open launcher config</source>
         <translation>Открыть конфигурацию лаунчера</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="863"/>
-        <location filename="../src/mainwindow.cpp" line="1096"/>
+        <location filename="../src/mainwindow.cpp" line="873"/>
+        <location filename="../src/mainwindow.cpp" line="1106"/>
         <source>TOML config (*.toml);;All files (*)</source>
         <translation>TOML файл (*.toml);;Все файлы (*)</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="873"/>
+        <location filename="../src/mainwindow.cpp" line="883"/>
         <source>This is a JSON config. SmolLauncher reads TOML only; convert it to .toml before opening.</source>
         <translation>Это конфигурация JSON. SmolLauncher читает только TOML; преобразуйте её в .toml перед открытием.</translation>
     </message>
@@ -652,32 +664,32 @@ Imported entries would not be able to launch.</source>
         <translation>Импортировано игр GOG: %1, пропущено: %2</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="895"/>
+        <location filename="../src/mainwindow.cpp" line="905"/>
         <source>Invalid TOML (%1:%2): %3</source>
         <translation>Неправильный TOML (%1:%2): %3</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="903"/>
+        <location filename="../src/mainwindow.cpp" line="913"/>
         <source>Config has no [[categories]]: %1</source>
         <translation>Список не имеет [[категорий]]: %1</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="907"/>
+        <location filename="../src/mainwindow.cpp" line="917"/>
         <source>Unsupported key in config; not loaded: %1</source>
         <translation>Неподдерживаемый ключ в конфигурации; не загружено: %1</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="911"/>
+        <location filename="../src/mainwindow.cpp" line="921"/>
         <source>Unsupported config structure; not loaded: %1</source>
         <translation>Неподдерживаемая структура конфигурации; не загружено: %1</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="989"/>
+        <location filename="../src/mainwindow.cpp" line="999"/>
         <source>Config loaded: %1</source>
         <translation>Список загружен: %1</translation>
     </message>
     <message numerus="yes">
-        <location filename="../src/mainwindow.cpp" line="991"/>
+        <location filename="../src/mainwindow.cpp" line="1001"/>
         <source>(%n broken)</source>
         <translation>
             <numerusform>(%n сломано)</numerusform>
@@ -686,78 +698,78 @@ Imported entries would not be able to launch.</source>
         </translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="1066"/>
+        <location filename="../src/mainwindow.cpp" line="1076"/>
         <source>Unsaved changes</source>
         <translation>Несохранённые изменения</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="1067"/>
+        <location filename="../src/mainwindow.cpp" line="1077"/>
         <source>The current list has unsaved changes.
 Do you want to save them?</source>
         <translation>В текущем списке есть несохранённые изменения.
 Сохранить их?</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="1084"/>
+        <location filename="../src/mainwindow.cpp" line="1094"/>
         <source>Saved: %1</source>
         <translation>Сохранено: %1</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="1094"/>
+        <location filename="../src/mainwindow.cpp" line="1104"/>
         <source>Save list as</source>
         <translation>Сохранить список как</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="1114"/>
+        <location filename="../src/mainwindow.cpp" line="1124"/>
         <source>Saved as: %1</source>
         <translation>Сохранено как: %1</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="1199"/>
+        <location filename="../src/mainwindow.cpp" line="1209"/>
         <source>List name:</source>
         <translation>Название списка:</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="1211"/>
+        <location filename="../src/mainwindow.cpp" line="1221"/>
         <source>new list</source>
         <translation>новый список</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="1221"/>
+        <location filename="../src/mainwindow.cpp" line="1231"/>
         <source>A list named &quot;%1&quot; already exists.
 Overwrite it?</source>
         <translation>Список с именем &quot;%1&quot; уже существует.
 Перезаписать его?</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="1252"/>
+        <location filename="../src/mainwindow.cpp" line="1262"/>
         <source>New list: %1</source>
         <translation>Новый список: %1</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="1431"/>
+        <location filename="../src/mainwindow.cpp" line="1441"/>
         <source>(no recent lists)</source>
         <translation>(нет недавних списков)</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="1446"/>
+        <location filename="../src/mainwindow.cpp" line="1456"/>
         <source>(missing)</source>
         <translation>(отсутствует)</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="1456"/>
+        <location filename="../src/mainwindow.cpp" line="1466"/>
         <source>File not found:
 %1</source>
         <translation>Файл не найден:
 %1</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="1465"/>
+        <location filename="../src/mainwindow.cpp" line="1475"/>
         <source>Clear recent lists</source>
         <translation>Очистить список</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="1701"/>
+        <location filename="../src/mainwindow.cpp" line="1711"/>
         <source>Prism Launcher…</source>
         <translation>Prism Launcher...</translation>
     </message>
@@ -934,33 +946,33 @@ Imported entries would not be able to launch.</source>
         <translation>Импортировано %1 ROM-файлов</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="1697"/>
+        <location filename="../src/mainwindow.cpp" line="1707"/>
         <source>itch.io…</source>
         <translation>itch.io...</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="1699"/>
+        <location filename="../src/mainwindow.cpp" line="1709"/>
         <source>RetroArch…</source>
         <translation>RetroArch...</translation>
     </message>
     <message>
-        <location filename="../smollauncher_UI.ui" line="890"/>
-        <location filename="../src/mainwindow.cpp" line="1689"/>
+        <location filename="../smollauncher_UI.ui" line="891"/>
+        <location filename="../src/mainwindow.cpp" line="1699"/>
         <source>Import games</source>
         <translation>Импортировать игры</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="1691"/>
+        <location filename="../src/mainwindow.cpp" line="1701"/>
         <source>Steam…</source>
         <translation>Steam...</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="1693"/>
+        <location filename="../src/mainwindow.cpp" line="1703"/>
         <source>Heroic — Epic Games…</source>
         <translation>Heroic — Epic Games…</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="1695"/>
+        <location filename="../src/mainwindow.cpp" line="1705"/>
         <source>Heroic — GOG…</source>
         <translation>Heroic — GOG…</translation>
     </message>
@@ -1012,14 +1024,14 @@ Imported entries would not be able to launch.</source>
         <translation>Отсортировать по алфавиту</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="1506"/>
+        <location filename="../src/mainwindow.cpp" line="1516"/>
         <source>Binary not found or not executable:
 %1</source>
         <translation>Исполняемый файл не найден или невозможно запустить:
 %1</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="1606"/>
+        <location filename="../src/mainwindow.cpp" line="1616"/>
         <source>Sorted %1 entries in &quot;%2&quot;</source>
         <translation>Отсортировано %1 приложений в &quot;%2&quot;</translation>
     </message>
@@ -1029,17 +1041,17 @@ Imported entries would not be able to launch.</source>
         <translation>Размер иконок</translation>
     </message>
     <message>
-        <location filename="../smollauncher_UI.ui" line="851"/>
+        <location filename="../smollauncher_UI.ui" line="852"/>
         <source>Small (16px)</source>
         <translation>Маленький (16px)</translation>
     </message>
     <message>
-        <location filename="../smollauncher_UI.ui" line="859"/>
+        <location filename="../smollauncher_UI.ui" line="860"/>
         <source>Normal (24px)</source>
         <translation>Средний (24px)</translation>
     </message>
     <message>
-        <location filename="../smollauncher_UI.ui" line="867"/>
+        <location filename="../smollauncher_UI.ui" line="868"/>
         <source>Large (32px)</source>
         <translation>Большой (32px)</translation>
     </message>
@@ -1164,6 +1176,55 @@ Imported entries would not be able to launch.</source>
         <location filename="../src/importers/steam/steampickerdialog.ui" line="65"/>
         <source>Select none</source>
         <translation>Снять выбор</translation>
+    </message>
+</context>
+<context>
+    <name>TerminalSettingsDialog</name>
+    <message>
+        <location filename="../src/terminalsettingsdialog.ui" line="14"/>
+        <location filename="../src/terminalsettingsdialog.cpp" line="75"/>
+        <source>Terminal emulator</source>
+        <translation>Эмулятор терминала</translation>
+    </message>
+    <message>
+        <location filename="../src/terminalsettingsdialog.ui" line="35"/>
+        <source>Default terminal emulator</source>
+        <translation>Эмулятор терминал по-умолчанию</translation>
+    </message>
+    <message>
+        <location filename="../src/terminalsettingsdialog.ui" line="55"/>
+        <source>Use custom terminal emulator</source>
+        <translation>Использовать свой эмулятор терминала</translation>
+    </message>
+    <message>
+        <location filename="../src/terminalsettingsdialog.ui" line="64"/>
+        <source>Binary</source>
+        <translation>Исполняемый файл</translation>
+    </message>
+    <message>
+        <location filename="../src/terminalsettingsdialog.ui" line="74"/>
+        <source>/path/to/terminal</source>
+        <translation>/path/to/terminal</translation>
+    </message>
+    <message>
+        <location filename="../src/terminalsettingsdialog.ui" line="84"/>
+        <source>Arguments</source>
+        <translation>Аргументы</translation>
+    </message>
+    <message>
+        <location filename="../src/terminalsettingsdialog.ui" line="94"/>
+        <source>Terminal arguments before the command, e.g. -e</source>
+        <translation>Аргументы эмулятора терминала перед запуском команды, например -e</translation>
+    </message>
+    <message>
+        <location filename="../src/terminalsettingsdialog.ui" line="106"/>
+        <source>Used when an application is marked to launch in a terminal.</source>
+        <translation>Используется, если активирован пункт &quot;Запускать в терминале&quot;.</translation>
+    </message>
+    <message>
+        <location filename="../src/terminalsettingsdialog.cpp" line="76"/>
+        <source>Choose a custom terminal binary first.</source>
+        <translation>Сначала выберите исполняемый файл терминала.</translation>
     </message>
 </context>
 </TS>

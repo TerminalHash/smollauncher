@@ -4,8 +4,12 @@
 #include "include/appitem.h"
 #include "include/launcherfilterproxy.h"
 #include "include/launchermodel.h"
+#include "include/terminalsettings.h"
+#include "include/terminalsettingsdialog.h"
 
 #include <QApplication>
+#include <QCheckBox>
+#include <QComboBox>
 #include <QFile>
 #include <QLineEdit>
 #include <QPushButton>
@@ -47,6 +51,9 @@ private slots:
 
     void languageChangeKeepsEditorPaths();
     void removingEnvVarUpdatesEntry();
+    void terminalPrefixesAreCorrect();
+    void terminalSettingsRoundTrip();
+    void terminalDialogReflectsSettings();
 
 private:
     AppItem *selectFirstApp(MainWindow &window);
@@ -147,6 +154,67 @@ void EditorTest::removingEnvVarUpdatesEntry()
     QCOMPARE(env->rowCount(), 1);
     QVERIFY(!app->env.contains(QStringLiteral("A")));
     QVERIFY(app->env.contains(QStringLiteral("B")));
+}
+
+void EditorTest::terminalPrefixesAreCorrect()
+{
+    QCOMPARE(TerminalSettings::commandPrefix(QStringLiteral("gnome-terminal")),
+             QStringList({ QStringLiteral("--") }));
+    QCOMPARE(TerminalSettings::commandPrefix(QStringLiteral("xfce4-terminal")),
+             QStringList({ QStringLiteral("-x") }));
+    QCOMPARE(TerminalSettings::commandPrefix(QStringLiteral("konsole")),
+             QStringList({ QStringLiteral("-e") }));
+    QCOMPARE(TerminalSettings::commandPrefix(QStringLiteral("xterm")),
+             QStringList({ QStringLiteral("-e") }));
+}
+
+void EditorTest::terminalSettingsRoundTrip()
+{
+    TerminalSettings::Config config;
+    config.program    = QStringLiteral("konsole");
+    config.custom     = true;
+    config.customBin  = QStringLiteral("/opt/term");
+    config.customArgs = QStringLiteral("-e --hold");
+    TerminalSettings::save(config);
+
+    const TerminalSettings::Config loaded = TerminalSettings::load();
+    QCOMPARE(loaded.program, config.program);
+    QCOMPARE(loaded.custom, true);
+    QCOMPARE(loaded.customBin, config.customBin);
+    QCOMPARE(loaded.customArgs, config.customArgs);
+}
+
+void EditorTest::terminalDialogReflectsSettings()
+{
+    TerminalSettings::Config config;
+    config.program    = QStringLiteral("xterm");
+    config.custom     = true;
+    config.customBin  = QStringLiteral("/bin/term");
+    config.customArgs = QStringLiteral("-e");
+    TerminalSettings::save(config);
+
+    TerminalSettingsDialog dlg;
+    auto *combo = dlg.findChild<QComboBox *>(QStringLiteral("terminalCombo"));
+    auto *custom = dlg.findChild<QCheckBox *>(QStringLiteral("customCheck"));
+    auto *bin = dlg.findChild<QLineEdit *>(QStringLiteral("binField"));
+    auto *args = dlg.findChild<QLineEdit *>(QStringLiteral("argsField"));
+    QVERIFY(combo);
+    QVERIFY(custom);
+    QVERIFY(bin);
+    QVERIFY(args);
+
+    QCOMPARE(combo->currentData().toString(), QStringLiteral("xterm"));
+    QCOMPARE(custom->isChecked(), true);
+    QCOMPARE(combo->isEnabled(), false);
+    QCOMPARE(bin->text(), QStringLiteral("/bin/term"));
+    QCOMPARE(bin->isEnabled(), true);
+    QCOMPARE(args->text(), QStringLiteral("-e"));
+    QCOMPARE(args->isEnabled(), true);
+
+    custom->setChecked(false);
+    QCOMPARE(combo->isEnabled(), true);
+    QCOMPARE(bin->isEnabled(), false);
+    QCOMPARE(args->isEnabled(), false);
 }
 
 QTEST_MAIN(EditorTest)

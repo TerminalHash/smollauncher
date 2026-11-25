@@ -791,6 +791,7 @@
      <addaction name="actionIconS48"/>
     </widget>
     <addaction name="menuIconSize"/>
+    <addaction name="actionTerminalEmulator"/>
     <addaction name="actionLanguage"/>
     <addaction name="separator"/>
     <addaction name="actionFixedWindowSize"/>
@@ -804,8 +805,8 @@
     <addaction name="actionSortApps"/>
    </widget>
    <addaction name="menuFile"/>
-   <addaction name="menuMisc"/>
    <addaction name="menuSort"/>
+   <addaction name="menuMisc"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionFile">
@@ -893,6 +894,11 @@
   <action name="actionSortApps">
    <property name="text">
     <string>Sort applications alphabetically</string>
+   </property>
+  </action>
+  <action name="actionTerminalEmulator">
+   <property name="text">
+    <string>Terminal emulator...</string>
    </property>
   </action>
   <action name="actionFixedWindowSize">

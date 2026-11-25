@@ -10,6 +10,7 @@
 #include "include/debug.h"
 #include "include/catwidget.h"
 #include "include/iconpickerdialog.h"
+#include "include/terminalsettingsdialog.h"
 #include "include/launcherfilterproxy.h"
 #include "launchcontroller.h"
 #include "contextmenucontroller.h"
@@ -301,6 +302,15 @@ void MainWindow::setupConnections()
         }
         ui->actionSortApps->setEnabled(appCount >= 2);
     });
+
+#ifdef Q_OS_LINUX
+    connect(ui->actionTerminalEmulator, &QAction::triggered, this, [this]{
+        TerminalSettingsDialog dlg(this);
+        dlg.exec();
+    });
+#else
+    ui->actionTerminalEmulator->setVisible(false);
+#endif
 
     // ---- keyboard shortcuts for menu actions -------------------------------
     ui->actionNewList->setShortcut(QKeySequence::New);             // Ctrl+N

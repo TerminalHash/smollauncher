@@ -16,6 +16,8 @@ SOURCES += $$PWD/mainwindow.cpp \
            $$PWD/configfile.cpp \
            $$PWD/commandline.cpp \
            $$PWD/debug.cpp \
+           $$PWD/terminalsettings.cpp \
+           $$PWD/terminalsettingsdialog.cpp \
            $$PWD/contextmenucontroller.cpp \
            $$PWD/editorcontroller.cpp \
            $$PWD/launchcontroller.cpp \
@@ -46,6 +48,8 @@ HEADERS += $$PWD/include/mainwindow.h \
            $$PWD/include/configfile.h \
            $$PWD/include/commandline.h \
            $$PWD/include/debug.h \
+           $$PWD/include/terminalsettings.h \
+           $$PWD/include/terminalsettingsdialog.h \
            $$PWD/contextmenucontroller.h \
            $$PWD/editorcontroller.h \
            $$PWD/launchcontroller.h \
@@ -65,6 +69,7 @@ HEADERS += $$PWD/include/mainwindow.h \
 
 FORMS += $$PWD/../smollauncher_UI.ui \
          $$PWD/aboutdialog.ui \
+         $$PWD/terminalsettingsdialog.ui \
          $$PWD/iconpickerdialog.ui \
          $$PWD/desktoppickerdialog.ui \
          $$PWD/importers/steam/steampickerdialog.ui \

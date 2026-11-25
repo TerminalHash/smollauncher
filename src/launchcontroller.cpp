@@ -1,7 +1,9 @@
 #include "launchcontroller.h"
 #include "include/mainwindow.h"
 #include "include/appitem.h"
+#include "include/commandline.h"
 #include "include/debug.h"
+#include "include/terminalsettings.h"
 
 #include <QApplication>
 #include <QDateTime>
@@ -101,23 +103,29 @@ void LaunchController::launch(AppItem *app)
     // ----- terminal wrapper ---------------------------------------------
     if (app->launchInTerminal) {
 #if defined(Q_OS_LINUX)
-        const QString term = findTerminalProgram();
-        if (term.isEmpty()) {
-            QMessageBox::warning(m_w, MainWindow::tr("SmolLauncher"),
-                                 MainWindow::tr("No terminal emulator found."));
+        const TerminalSettings::Config config = TerminalSettings::load();
+        QString term;
+        QStringList termPrefix;
+        if (config.custom) {
+            term = config.customBin.trimmed();
+            termPrefix = CommandLine::splitArgs(config.customArgs);
+        } else {
+            term = config.program;
+            if (term.isEmpty())
+                term = findTerminalProgram();
+            termPrefix = TerminalSettings::commandPrefix(term);
+        }
+        if (term.isEmpty() || QStandardPaths::findExecutable(term).isEmpty()) {
+            QMessageBox::warning(
+                m_w, MainWindow::tr("SmolLauncher"),
+                term.isEmpty()
+                    ? MainWindow::tr("No terminal emulator found.")
+                    : MainWindow::tr("Terminal emulator not found:\n%1").arg(term));
             return;
         }
-        QStringList termArgs;
-        if (term == "gnome-terminal") {
-            termArgs << "--" << program << args;
-        } else if (term == "xfce4-terminal") {
-            termArgs << "-x" << program << args;
-        } else {
-            // xterm / konsole / x-terminal-emulator
-            termArgs << "-e" << program << args;
-        }
+        termPrefix << program << args;
         program = term;
-        args    = termArgs;
+        args    = termPrefix;
 #elif defined(Q_OS_WIN)
         QStringList full = QStringList() << program << args;
         args = QStringList() << "/c" << "start" << "cmd" << "/k"
